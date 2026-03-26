@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keplr — The Operating System for Scientific Intuition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f2ed;
+    --cream: #ede8e0;
+    --amber: #d4820a;
+    --amber-pale: #fdf3dc;
+    --teal: #0d7a6e;
+    --teal-pale: #d4eeeb;
+    --coral: #c94f2c;
+    --coral-pale: #fde8e0;
+    --purple: #4f3ca8;
+    --purple-pale: #ece9f9;
+    --muted: #6b6860;
+    --rule: rgba(15,14,12,0.12);
+    --mono: 'DM Mono', monospace;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Instrument Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2.5rem;
+    z-index: 100;
+    mix-blend-mode: multiply;
+  }
+
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--ink); }
+
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.5rem 1.25rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.8; }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8rem 3.5rem 4rem;
+    border-right: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--amber);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 5.5vw, 5.5rem);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 2rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 38ch;
+    margin-bottom: 3rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 0 var(--amber);
+  }
+
+  .btn-ghost {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--ink); }
+
+  /* ─── HERO RIGHT: SIMULATION DEMO ─── */
+  .hero-right {
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 7rem 3rem 4rem;
+    position: relative;
+  }
+
+  .demo-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .demo-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 1.75rem;
+    position: relative;
+  }
+
+  .demo-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .demo-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .sim-row {
+    margin-bottom: 1.25rem;
+  }
+
+  .sim-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .sim-value {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--rule);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--ink);
+    cursor: pointer;
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--ink);
+  }
+
+  .sim-output {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .sim-output-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sim-output-value {
+    font-family: var(--serif);
+    font-size: 2rem;
+    color: var(--teal);
+    transition: all 0.3s;
+  }
+
+  .sim-output-unit {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .sim-chart {
+    width: 100%;
+    height: 80px;
+    margin-top: 0.75rem;
+    position: relative;
+  }
+
+  .insight-bubble {
+    background: var(--amber-pale);
+    border-left: 3px solid var(--amber);
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    font-size: 0.82rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .insight-bubble strong {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  /* ─── SCROLL TICKER ─── */
+  .ticker {
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+    padding: 0.85rem 0;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 4rem;
+    animation: ticker 28s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+
+  .ticker span {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .ticker-dot {
+    color: var(--amber);
+    opacity: 1 !important;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ─── PROBLEM ─── */
+  .problem {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .problem-left {
+    padding: 5rem 3.5rem;
+    border-right: 1px solid var(--rule);
+  }
+
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 3.5vw, 3.2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 em { font-style: italic; color: var(--coral); }
+
+  .body-text {
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.75;
+    max-width: 44ch;
+  }
+
+  .problem-right {
+    padding: 5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid var(--rule);
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .stat-block:hover { border-color: var(--ink); }
+
+  .stat-number {
+    font-family: var(--serif);
+    font-size: 3rem;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-number.amber { color: var(--amber); }
+  .stat-number.coral { color: var(--coral); }
+  .stat-number.teal { color: var(--teal); }
+
+  .stat-label {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ─── HOW IT WORKS ─── */
+  .how {
+    padding: 6rem 3.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .how-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 4rem;
+    gap: 2rem;
+  }
+
+  .how-header h2 { margin-bottom: 0; }
+
+  .how-sub {
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: 36ch;
+    line-height: 1.65;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 1px solid var(--rule);
+  }
+
+  .step {
+    padding: 2.5rem 2rem;
+    border-right: 1px solid var(--rule);
+    position: relative;
+    transition: background 0.2s;
+  }
+  .step:last-child { border-right: none; }
+  .step:hover { background: var(--cream); }
+
+  .step-number {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step h3 {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75rem;
+    line-height: 1.1;
+  }
+
+  .step p {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ─── USE CASES ─── */
+  .cases {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .cases-header {
+    padding: 4rem 3.5rem 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .case-item {
+    padding: 2.5rem;
+    border-right: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .case-item:last-child { border-right: none; }
+  .case-item:hover { background: var(--cream); }
+
+  .case-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .tag-amber { background: var(--amber-pale); color: var(--amber); }
+  .tag-teal { background: var(--teal-pale); color: var(--teal); }
+  .tag-coral { background: var(--coral-pale); color: var(--coral); }
+  .tag-purple { background: var(--purple-pale); color: var(--purple); }
+
+  .case-item h3 {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .case-item p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .case-example {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--cream);
+    border-left: 2px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ─── MOAT / DIFFERENTIATOR ─── */
+  .moat {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 6rem 3.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .moat::before {
+    content: 'KEPLR';
+    position: absolute;
+    font-family: var(--serif);
+    font-size: 18vw;
+    color: rgba(255,255,255,0.03);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -0.03em;
+  }
+
+  .moat-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+    position: relative;
+  }
+
+  .moat h2 {
+    color: var(--paper);
+    font-size: clamp(2rem, 3.5vw, 3rem);
+  }
+
+  .moat h2 em { color: var(--amber); }
+
+  .moat .body-text { color: rgba(245,242,237,0.55); }
+
+  .moat-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .moat-list li {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .moat-list li:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .moat-num {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    padding-top: 0.2rem;
+    min-width: 2rem;
+  }
+
+  .moat-list-text h4 {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    color: var(--paper);
+    margin-bottom: 0.25rem;
+  }
+
+  .moat-list-text p {
+    font-size: 0.85rem;
+    color: rgba(245,242,237,0.5);
+    line-height: 1.6;
+  }
+
+  /* ─── PRICING ─── */
+  .pricing {
+    padding: 6rem 3.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .pricing-header {
+    margin-bottom: 3.5rem;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .price-card {
+    border: 1px solid var(--rule);
+    padding: 2rem;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .price-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 6px 6px 0 var(--cream);
+  }
+
+  .price-card.featured {
+    border-color: var(--ink);
+    border-width: 2px;
+    background: var(--cream);
+  }
+
+  .price-card.featured::before {
+    content: 'Most popular';
+    position: absolute;
+    top: -1px;
+    right: 2rem;
+    transform: translateY(-100%);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+  }
+
+  .price-tier {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .price-amount {
+    font-family: var(--serif);
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .price-period {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .price-desc {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .price-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .price-features li {
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .price-features li::before {
+    content: '—';
+    color: var(--amber);
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+
+  .btn-outline {
+    width: 100%;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.85rem;
+    border: 1px solid var(--ink);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+  }
+  .btn-outline:hover { background: var(--ink); color: var(--paper); }
+
+  .btn-solid {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.85rem;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+  }
+  .btn-solid:hover { opacity: 0.8; }
+
+  /* ─── INVESTORS ─── */
+  .investors {
+    background: var(--cream);
+    padding: 4rem 3.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .investors-inner {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .investors-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .investors-line {
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .investors-logos {
+    display: flex;
+    gap: 2.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .investor-name {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--muted);
+    opacity: 0.5;
+    font-style: italic;
+    transition: opacity 0.2s;
+    cursor: default;
+  }
+  .investor-name:hover { opacity: 0.9; }
+
+  /* ─── TEAM / QUOTE ─── */
+  .cta-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .cta-left {
+    padding: 5rem 3.5rem;
+    border-right: 1px solid var(--rule);
+    background: var(--amber-pale);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  blockquote {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 2rem;
+  }
+
+  .quote-attr {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .cta-right {
+    padding: 5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .cta-right h2 {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+  }
+
+  .cta-right h2 em { color: var(--amber); }
+
+  .email-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .email-form input[type="email"] {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    color: var(--ink);
+    width: 100%;
+  }
+  .email-form input[type="email"]:focus { border-color: var(--ink); }
+  .email-form input[type="email"]::placeholder { color: var(--muted); }
+
+  .form-note {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 2.5rem 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--rule);
+  }
+
+  .footer-logo {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+
+  .footer-tagline {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+  }
+
+  .footer-links a {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--ink); }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards;
+  }
+
+  .delay-1 { animation-delay: 0.15s; }
+  .delay-2 { animation-delay: 0.3s; }
+  .delay-3 { animation-delay: 0.45s; }
+  .delay-4 { animation-delay: 0.6s; }
+
+  /* scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    .hero, .problem, .cta-section { grid-template-columns: 1fr; }
+    .hero-left { border-right: none; padding: 7rem 1.75rem 3rem; }
+    .hero-right { padding: 3rem 1.75rem; }
+    .problem-left { border-right: none; padding: 3rem 1.75rem; }
+    .problem-right { padding: 2rem 1.75rem; }
+    .steps-grid, .cases-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .step { border-right: none; border-bottom: 1px solid var(--rule); }
+    .case-item { border-right: none; border-bottom: 1px solid var(--rule); }
+    .how, .pricing, .moat { padding: 4rem 1.75rem; }
+    .moat-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .cta-left, .cta-right { padding: 3rem 1.75rem; }
+    .how-header { flex-direction: column; align-items: flex-start; }
+    nav { padding: 1rem 1.75rem; }
+    .nav-links { display: none; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+    .investors-inner { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Keplr</a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="landing.html">Try it out</a></li>
+    <li><a href="#use-cases">Use cases</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <a href="#early-access" class="nav-cta">Request access</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow fade-in">Now in private beta</div>
+    <h1 class="fade-in delay-1">The <em>operating system</em> for scientific intuition.</h1>
+    <p class="hero-sub fade-in delay-2">Stop reading about how things work. Start <em>feeling</em> it. Keplr converts any research paper, concept, or lecture into a living, manipulable simulation — in seconds.</p>
+    <div class="hero-actions fade-in delay-3">
+      <a href="#early-access" class="btn-primary">Get early access</a>
+      <a href="#how" class="btn-ghost">See how it works ↓</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="demo-label fade-in delay-1">Live demo — compound interest</div>
+    <div class="demo-card fade-in delay-2">
+      <div class="demo-title">Compound Interest Model</div>
+      <div class="demo-desc">Loaded from Khan Academy · 2 variables detected</div>
+
+      <div class="sim-row">
+        <div class="sim-label">
+          <span>Annual interest rate</span>
+          <span class="sim-value" id="rate-val">7%</span>
+        </div>
+        <input type="range" min="1" max="20" value="7" id="rate-slider">
+      </div>
+
+      <div class="sim-row">
+        <div class="sim-label">
+          <span>Years invested</span>
+          <span class="sim-value" id="years-val">20 yrs</span>
+        </div>
+        <input type="range" min="1" max="50" value="20" id="years-slider">
+      </div>
+
+      <div class="sim-output">
+        <span class="sim-output-label">$1,000 grows to</span>
+        <span class="sim-output-value" id="output-value">$3,870</span>
+        <span class="sim-output-unit">total</span>
+      </div>
+
+      <canvas class="sim-chart" id="growth-chart"></canvas>
+
+      <div class="insight-bubble" id="insight-text">
+        <strong>Keplr insight</strong>
+        At 7% over 20 years, your money nearly quadruples. The last 5 years generate more growth than the first 15 combined — that's the compounding curve.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span>Bioinformatics</span><span class="ticker-dot">◆</span>
+    <span>Pharmacokinetics</span><span class="ticker-dot">◆</span>
+    <span>Orbital mechanics</span><span class="ticker-dot">◆</span>
+    <span>Machine learning</span><span class="ticker-dot">◆</span>
+    <span>Thermodynamics</span><span class="ticker-dot">◆</span>
+    <span>Epidemiology</span><span class="ticker-dot">◆</span>
+    <span>Behavioral economics</span><span class="ticker-dot">◆</span>
+    <span>Quantum chemistry</span><span class="ticker-dot">◆</span>
+    <span>Fluid dynamics</span><span class="ticker-dot">◆</span>
+    <span>Genetics</span><span class="ticker-dot">◆</span>
+    <span>Bioinformatics</span><span class="ticker-dot">◆</span>
+    <span>Pharmacokinetics</span><span class="ticker-dot">◆</span>
+    <span>Orbital mechanics</span><span class="ticker-dot">◆</span>
+    <span>Machine learning</span><span class="ticker-dot">◆</span>
+    <span>Thermodynamics</span><span class="ticker-dot">◆</span>
+    <span>Epidemiology</span><span class="ticker-dot">◆</span>
+    <span>Behavioral economics</span><span class="ticker-dot">◆</span>
+    <span>Quantum chemistry</span><span class="ticker-dot">◆</span>
+    <span>Fluid dynamics</span><span class="ticker-dot">◆</span>
+    <span>Genetics</span><span class="ticker-dot">◆</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="problem-left reveal">
+    <div class="section-eyebrow">The problem</div>
+    <h2>We're drowning in knowledge, starving for <em>understanding.</em></h2>
+    <p class="body-text">Every year, researchers publish over 2 million papers. Doctors have 20 minutes per patient. Students spend four years memorizing facts they don't feel in their bones. The gap between knowing a thing and truly understanding it has never been larger — and existing tools make it worse.</p>
+  </div>
+  <div class="problem-right reveal">
+    <div class="stat-block">
+      <div class="stat-number amber">2M+</div>
+      <div class="stat-label">scientific papers published annually — almost none are truly understood beyond the author's lab</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-number coral">57%</div>
+      <div class="stat-label">of STEM graduates say they can solve problems they don't actually understand — they've learned to pattern-match, not reason</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-number teal">$340B</div>
+      <div class="stat-label">global EdTech market by 2030 — and not one product solves the comprehension problem at its root</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-header reveal">
+    <div>
+      <div class="section-eyebrow">How it works</div>
+      <h2>Input anything. Understand everything.</h2>
+    </div>
+    <p class="how-sub">Three steps from raw knowledge to visceral, actionable intuition. No PhD required. No code required.</p>
+  </div>
+
+  <div class="steps-grid reveal">
+    <div class="step">
+      <div class="step-number">01 / 03</div>
+      <div class="step-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect x="4" y="4" width="24" height="4" rx="1" fill="var(--amber)" opacity="0.8"/>
+          <rect x="4" y="12" width="18" height="3" rx="1" fill="var(--ink)" opacity="0.25"/>
+          <rect x="4" y="19" width="22" height="3" rx="1" fill="var(--ink)" opacity="0.25"/>
+          <rect x="4" y="26" width="14" height="3" rx="1" fill="var(--ink)" opacity="0.15"/>
+        </svg>
+      </div>
+      <h3>Feed it anything</h3>
+      <p>Paste a research paper, drop a lecture URL, type a concept, or connect to PubMed. Keplr extracts the causal structure — variables, relationships, ranges, edge cases — from any format.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">02 / 03</div>
+      <div class="step-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="10" stroke="var(--teal)" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="16" r="4" fill="var(--teal)" opacity="0.6"/>
+          <line x1="16" y1="2" x2="16" y2="8" stroke="var(--teal)" stroke-width="1.5"/>
+          <line x1="16" y1="24" x2="16" y2="30" stroke="var(--teal)" stroke-width="1.5"/>
+          <line x1="2" y1="16" x2="8" y2="16" stroke="var(--teal)" stroke-width="1.5"/>
+          <line x1="24" y1="16" x2="30" y2="16" stroke="var(--teal)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <h3>A living model appears</h3>
+      <p>Keplr builds an interactive simulation — sliders, graphs, toggles — tuned to the specific mechanism. Not a generic calculator. A model of <em>this</em> concept, with <em>this</em> paper's variables and assumptions.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">03 / 03</div>
+      <div class="step-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M6 26L12 18L18 22L26 10" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="26" cy="10" r="3" fill="var(--purple)" opacity="0.7"/>
+          <circle cx="6" cy="26" r="3" fill="var(--purple)" opacity="0.3"/>
+        </svg>
+      </div>
+      <h3>Intuition builds itself</h3>
+      <p>Play. Break things. Watch cause become effect in real time. Keplr tracks what surprises you, adapts difficulty, and surfaces insights the paper never stated explicitly — because some things can only be felt.</p>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="cases" id="use-cases">
+  <div class="cases-header reveal">
+    <div class="section-eyebrow">Use cases</div>
+    <h2>Built for anyone who thinks for a living.</h2>
+  </div>
+  <div class="cases-grid">
+    <div class="case-item reveal">
+      <span class="case-tag tag-amber">Students</span>
+      <h3>Ace exams by understanding, not memorizing</h3>
+      <p>Upload your textbook chapter. Get a simulation of every mechanism inside. Tweak variables. Build real intuition that lasts beyond the final.</p>
+      <div class="case-example">→ "Load this pharmacokinetics paper and let me explore drug half-life curves"</div>
+    </div>
+    <div class="case-item reveal">
+      <span class="case-tag tag-teal">Researchers</span>
+      <h3>Feel your own data before you write a single word</h3>
+      <p>Parse your experimental results into an interactive model. Share it with collaborators as a living document, not a static PDF they'll skim once.</p>
+      <div class="case-example">→ "Convert this biostatistics dataset into an interactive model I can share with my PI"</div>
+    </div>
+    <div class="case-item reveal">
+      <span class="case-tag tag-coral">Enterprise R&D</span>
+      <h3>Compress months of onboarding into hours</h3>
+      <p>New hire joins a complex domain? Give them a Keplr workspace. They'll develop 6-month intuition in 2 weeks by playing with the actual mechanisms of your field.</p>
+      <div class="case-example">→ "Build a training sim from our materials science knowledge base"</div>
+    </div>
+  </div>
+</section>
+
+<!-- MOAT -->
+<section class="moat">
+  <div class="moat-inner">
+    <div class="reveal">
+      <div class="section-eyebrow" style="color:rgba(245,242,237,0.4)">Why we win</div>
+      <h2>The <em>real</em> moat isn't the product. It's the data.</h2>
+      <p class="body-text" style="margin-top:1rem">Every session where someone twists a slider and says "oh, <em>that's</em> why" — we record what mental model was missing. Over millions of sessions, we build the world's largest map of human confusion. No one else has it. No one else can build it.</p>
+    </div>
+    <ul class="moat-list reveal">
+      <li>
+        <span class="moat-num">01</span>
+        <div class="moat-list-text">
+          <h4>Network of confusion</h4>
+          <p>We learn exactly which concepts break down for which types of learners in which sequences. Proprietary dataset, built session by session.</p>
+        </div>
+      </li>
+      <li>
+        <span class="moat-num">02</span>
+        <div class="moat-list-text">
+          <h4>Causal graph library</h4>
+          <p>Every paper we parse adds to a growing graph of verified causal relationships across disciplines. It compounds. Fast-followers start from zero.</p>
+        </div>
+      </li>
+      <li>
+        <span class="moat-num">03</span>
+        <div class="moat-list-text">
+          <h4>Sim-to-paper citations</h4>
+          <p>When researchers share simulations that get cited, Keplr becomes part of the scholarly record. Lock-in that deepens every quarter.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="pricing-header reveal">
+    <div class="section-eyebrow">Pricing</div>
+    <h2>Start free. Scale with your ambition.</h2>
+  </div>
+  <div class="pricing-grid">
+    <div class="price-card reveal">
+      <div class="price-tier">Student</div>
+      <div class="price-amount">$10</div>
+      <div class="price-period">per month</div>
+      <div class="price-desc">Everything a student needs to go from reading about mechanisms to actually understanding them.</div>
+      <ul class="price-features">
+        <li>50 simulations per month</li>
+        <li>PubMed + arXiv integration</li>
+        <li>Share as public links</li>
+        <li>Keplr insight annotations</li>
+        <li>Export to PDF</li>
+      </ul>
+      <a href="#early-access" class="btn-outline">Get started</a>
+    </div>
+    <div class="price-card featured reveal">
+      <div class="price-tier">Researcher</div>
+      <div class="price-amount">$79</div>
+      <div class="price-period">per month</div>
+      <div class="price-desc">For scientists who want to share living models with collaborators and cite simulations in papers.</div>
+      <ul class="price-features">
+        <li>Unlimited simulations</li>
+        <li>Private team workspaces</li>
+        <li>Live collaboration + comments</li>
+        <li>DOI-linked sim citations</li>
+        <li>Custom variable sets</li>
+        <li>API access</li>
+      </ul>
+      <a href="#early-access" class="btn-solid">Get started</a>
+    </div>
+    <div class="price-card reveal">
+      <div class="price-tier">Enterprise</div>
+      <div class="price-amount" style="font-size:2rem">Custom</div>
+      <div class="price-period">annual contract</div>
+      <div class="price-desc">For institutions and R&D teams that need Keplr at scale, with SSO, compliance, and white-labeling.</div>
+      <ul class="price-features">
+        <li>Unlimited seats</li>
+        <li>Custom domain + white-label</li>
+        <li>SSO / SAML</li>
+        <li>Compliance reporting</li>
+        <li>Dedicated success manager</li>
+        <li>Training + onboarding</li>
+      </ul>
+      <a href="#early-access" class="btn-outline">Talk to sales</a>
+    </div>
+  </div>
+</section>
+
+<!-- INVESTORS -->
+<div class="investors">
+  <div class="investors-inner reveal">
+    <span class="investors-label">Backed by</span>
+    <div class="investors-line"></div>
+    <div class="investors-logos">
+      <span class="investor-name">Sequoia</span>
+      <span class="investor-name">a16z Bio</span>
+      <span class="investor-name">Founders Fund</span>
+      <span class="investor-name">OpenOcean</span>
+      <span class="investor-name">NSF SBIR</span>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section" id="early-access">
+  <div class="cta-left reveal">
+    <blockquote>"The gap between knowing a thing and truly understanding it is where intuition lives. Keplr closes that gap."</blockquote>
+    <div class="quote-attr">— from the Keplr founding thesis, 2025</div>
+  </div>
+  <div class="cta-right reveal">
+    <div>
+      <div class="section-eyebrow">Early access</div>
+      <h2>Join the <em>waitlist.</em></h2>
+      <p class="body-text" style="margin-top:0.75rem">We're onboarding 50 research teams and 200 students in our first cohort. Spots are limited.</p>
+    </div>
+    <div class="email-form">
+      <input type="email" placeholder="your@email.com" id="email-input">
+      <a href="#" class="btn-solid" onclick="handleSignup(event)">Request early access →</a>
+      <span class="form-note">No spam. Cancel anytime. We'll reach out within 48 hours.</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Keplr</span>
+  <span class="footer-tagline">Stop reading. Start feeling.</span>
+  <ul class="footer-links">
+    <li><a href="#">Blog</a></li>
+    <li><a href="#">Research</a></li>
+    <li><a href="#">Careers</a></li>
+    <li><a href="#">Privacy</a></li>
+  </ul>
+</footer>
+
+<script>
+  // ─── COMPOUND INTEREST DEMO ───
+  const rateSlider = document.getElementById('rate-slider');
+  const yearsSlider = document.getElementById('years-slider');
+  const rateVal = document.getElementById('rate-val');
+  const yearsVal = document.getElementById('years-val');
+  const outputVal = document.getElementById('output-value');
+  const insightText = document.getElementById('insight-text');
+  const canvas = document.getElementById('growth-chart');
+  const ctx = canvas.getContext('2d');
+
+  function calcCompound(rate, years) {
+    return 1000 * Math.pow(1 + rate / 100, years);
+  }
+
+  function formatMoney(n) {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(2) + 'M';
+    return '$' + Math.round(n).toLocaleString();
+  }
+
+  function getInsight(rate, years) {
+    const total = calcCompound(rate, years);
+    const halfway = calcCompound(rate, Math.floor(years / 2));
+    const secondHalf = total - halfway;
+    const firstHalf = halfway - 1000;
+
+    if (rate <= 3) return `<strong>Keplr insight</strong>At ${rate}% the compounding effect is gentle — you're relying on time more than rate. Try pushing the rate above 10% to feel the exponential kick in.`;
+    if (years <= 5) return `<strong>Keplr insight</strong>With only ${years} years, compounding barely has time to breathe. The magic happens in decades, not years — try extending the timeline.`;
+    if (secondHalf > firstHalf * 2) return `<strong>Keplr insight</strong>Notice: the last ${Math.floor(years / 2)} years generated more growth than the first ${Math.floor(years / 2)} combined. That's the compounding curve — exponential, not linear.`;
+    return `<strong>Keplr insight</strong>At ${rate}% over ${years} years, $1,000 becomes ${formatMoney(total)}. The growth accelerates — each year earns more than the last because you're earning interest on interest.`;
+  }
+
+  function drawChart(rate, years) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const pts = [];
+    for (let y = 0; y <= years; y++) {
+      pts.push({ x: (y / years) * (W - 4) + 2, y: calcCompound(rate, y) });
+    }
+    const maxY = pts[pts.length - 1].y;
+    const minY = 1000;
+    const scale = (H - 16) / (maxY - minY);
+
+    // fill
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, H - (pts[0].y - minY) * scale - 8);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, H - (pts[i].y - minY) * scale - 8);
+    ctx.lineTo(pts[pts.length - 1].x, H);
+    ctx.lineTo(pts[0].x, H);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(13,122,110,0.08)';
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, H - (pts[0].y - minY) * scale - 8);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, H - (pts[i].y - minY) * scale - 8);
+    ctx.strokeStyle = '#0d7a6e';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function update() {
+    const rate = parseInt(rateSlider.value);
+    const years = parseInt(yearsSlider.value);
+    rateVal.textContent = rate + '%';
+    yearsVal.textContent = years + ' yrs';
+    const result = calcCompound(rate, years);
+    outputVal.textContent = formatMoney(result);
+    insightText.innerHTML = getInsight(rate, years);
+    drawChart(rate, years);
+  }
+
+  rateSlider.addEventListener('input', update);
+  yearsSlider.addEventListener('input', update);
+  update();
+  window.addEventListener('resize', update);
+
+  // ─── SIGNUP ───
+  function handleSignup(e) {
+    e.preventDefault();
+    const email = document.getElementById('email-input').value;
+    if (!email || !email.includes('@')) {
+      document.getElementById('email-input').style.borderColor = 'var(--coral)';
+      return;
+    }
+    e.target.textContent = 'You\'re on the list ✓';
+    e.target.style.background = 'var(--teal)';
+    e.target.style.pointerEvents = 'none';
+  }
+
+  // ─── SCROLL REVEAL ───
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(el => {
+      if (el.isIntersecting) {
+        el.target.classList.add('visible');
+        observer.unobserve(el.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

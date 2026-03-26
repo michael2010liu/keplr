@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keplr — Turn any concept into a simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #0f0e0c; --paper: #f5f2ed; --cream: #ede8e0;
+  --rule: rgba(15,14,12,0.12); --rule-mid: rgba(15,14,12,0.22);
+  --muted: #6b6860; --teal: #0d7a6e; --teal-pale: #d4eeeb;
+  --amber: #d4820a; --amber-pale: #fdf3dc;
+  --coral: #c94f2c; --coral-pale: #fde8e0;
+  --purple: #4f3ca8;
+  --mono: 'DM Mono', monospace;
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans: 'Instrument Sans', sans-serif;
+}
+html, body { height: 100%; overflow-x: hidden; }
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+
+.view { display: none; min-height: 100vh; }
+.view.active { display: flex; flex-direction: column; }
+
+/* NAV */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2.5rem; border-bottom:1px solid var(--rule); position:sticky; top:0; background:var(--paper); z-index:50; }
+.brand { font-family:var(--serif); font-size:1.2rem; color:var(--ink); text-decoration:none; letter-spacing:-.01em; }
+.topbar-right { display:flex; align-items:center; gap:1.5rem; }
+.nav-link { font-family:var(--mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .2s; }
+.nav-link:hover { color:var(--ink); }
+
+/* INPUT HERO */
+.input-hero { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; max-width:760px; margin:0 auto; width:100%; }
+.input-eyebrow { font-family:var(--mono); font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:1.25rem; display:flex; align-items:center; gap:.6rem; align-self:flex-start; }
+.input-eyebrow::before { content:''; width:20px; height:1px; background:var(--muted); }
+h1.input-title { font-family:var(--serif); font-size:clamp(2.4rem,5vw,4rem); line-height:1.05; letter-spacing:-.02em; margin-bottom:1rem; align-self:flex-start; }
+h1.input-title em { font-style:italic; color:var(--teal); }
+.input-sub { font-size:.95rem; color:var(--muted); line-height:1.7; margin-bottom:2.5rem; align-self:flex-start; max-width:50ch; }
+
+.input-box { width:100%; border:1px solid var(--rule-mid); background:var(--paper); transition:border-color .2s, box-shadow .2s; }
+.input-box:focus-within { border-color:var(--ink); box-shadow:4px 4px 0 var(--cream); }
+.input-box-header { display:flex; align-items:center; justify-content:space-between; padding:.85rem 1.25rem; border-bottom:1px solid var(--rule); }
+.input-box-label { font-family:var(--mono); font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.input-tabs { display:flex; }
+.input-tab { font-family:var(--mono); font-size:.65rem; letter-spacing:.07em; text-transform:uppercase; padding:.3rem .75rem; cursor:pointer; color:var(--muted); border:1px solid transparent; background:transparent; transition:all .15s; }
+.input-tab:hover { color:var(--ink); }
+.input-tab.active { color:var(--ink); border-color:var(--rule-mid); background:var(--cream); }
+textarea#main-input { width:100%; min-height:200px; padding:1.25rem; font-family:var(--sans); font-size:.95rem; line-height:1.7; color:var(--ink); background:transparent; border:none; outline:none; resize:vertical; }
+textarea#main-input::placeholder { color:var(--muted); opacity:.6; }
+.input-box-footer { display:flex; align-items:center; justify-content:space-between; padding:.85rem 1.25rem; border-top:1px solid var(--rule); }
+.char-count { font-family:var(--mono); font-size:.65rem; letter-spacing:.04em; color:var(--muted); }
+.generate-btn { display:flex; align-items:center; gap:.6rem; background:var(--ink); color:var(--paper); font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:.75rem 1.5rem; border:none; cursor:pointer; transition:transform .15s, box-shadow .15s, opacity .2s; }
+.generate-btn:hover { transform:translateY(-1px); box-shadow:3px 3px 0 var(--teal); }
+.generate-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.generate-btn .arr { transition:transform .2s; }
+.generate-btn:hover .arr { transform:translateX(3px); }
+
+.subject-row { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; align-self:flex-start; }
+.subject-label { font-family:var(--mono); font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; margin-right:.25rem; }
+.chip { font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; padding:.35rem .85rem; border:1px solid var(--rule-mid); background:transparent; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
+.chip:hover { border-color:var(--ink); color:var(--ink); background:var(--cream); }
+
+.examples-row { width:100%; margin-top:2.5rem; border-top:1px solid var(--rule); padding-top:1.5rem; }
+.examples-label { font-family:var(--mono); font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+.examples-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
+.example-card { padding:1rem 1.1rem; border:1px solid var(--rule); cursor:pointer; transition:all .15s; position:relative; }
+.example-card:hover { border-color:var(--ink); background:var(--cream); }
+.example-subject { font-family:var(--mono); font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.35rem; }
+.example-card h4 { font-family:var(--serif); font-size:.95rem; line-height:1.2; margin-bottom:.3rem; letter-spacing:-.01em; }
+.example-card p { font-size:.75rem; color:var(--muted); line-height:1.5; }
+.use-arrow { position:absolute; top:.85rem; right:.85rem; font-size:.75rem; color:var(--muted); opacity:0; transition:opacity .15s; }
+.example-card:hover .use-arrow { opacity:1; }
+
+/* LOADING */
+#loading-view { align-items:center; justify-content:center; }
+.loading-inner { display:flex; flex-direction:column; align-items:center; gap:1.5rem; max-width:400px; text-align:center; }
+.loading-icon { width:52px; height:52px; border:1.5px solid var(--rule-mid); border-top-color:var(--teal); border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-title { font-family:var(--serif); font-size:1.5rem; letter-spacing:-.01em; }
+.loading-steps { list-style:none; display:flex; flex-direction:column; gap:.5rem; width:100%; }
+.loading-step { display:flex; align-items:center; gap:.75rem; font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted); padding:.6rem .9rem; border:1px solid var(--rule); text-align:left; transition:all .3s; }
+.loading-step.done { color:var(--teal); border-color:var(--teal-pale); background:var(--teal-pale); }
+.loading-step.active { color:var(--ink); border-color:var(--rule-mid); background:var(--cream); }
+.step-dot { width:6px; height:6px; border-radius:50%; background:var(--rule-mid); flex-shrink:0; transition:background .3s; }
+.loading-step.done .step-dot { background:var(--teal); }
+.loading-step.active .step-dot { background:var(--ink); animation:blink .8s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* SIM VIEW */
+#sim-view { flex-direction:column; }
+.sim-topbar { display:flex; align-items:center; justify-content:space-between; padding:.9rem 2rem; border-bottom:1px solid var(--rule); background:var(--paper); position:sticky; top:0; z-index:50; gap:1rem; }
+.sim-topbar-left { display:flex; align-items:center; gap:1rem; flex:1; min-width:0; }
+.back-btn { display:flex; align-items:center; gap:.4rem; font-family:var(--mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:.4rem 0; transition:color .2s; flex-shrink:0; }
+.back-btn:hover { color:var(--ink); }
+.topbar-div { width:1px; height:18px; background:var(--rule-mid); flex-shrink:0; }
+.sim-title-bar h2 { font-family:var(--serif); font-size:1.05rem; letter-spacing:-.01em; line-height:1.2; }
+.source-pill { display:inline-flex; align-items:center; gap:.35rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.06em; color:var(--teal); }
+.pdot { width:5px; height:5px; border-radius:50%; background:var(--teal); animation:blink 2s ease-in-out infinite; }
+.sim-topbar-right { display:flex; align-items:center; gap:.75rem; flex-shrink:0; }
+.icon-btn { display:flex; align-items:center; gap:.4rem; font-family:var(--mono); font-size:.65rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); background:none; border:1px solid var(--rule); padding:.45rem .85rem; cursor:pointer; transition:all .15s; }
+.icon-btn:hover { border-color:var(--ink); color:var(--ink); }
+
+.sim-layout { display:grid; grid-template-columns:1fr 340px; flex:1; }
+.sim-main { border-right:1px solid var(--rule); display:flex; flex-direction:column; }
+.sim-main-header { padding:1.75rem 2.25rem 1.25rem; border-bottom:1px solid var(--rule); }
+.sim-eyebrow { font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+.sim-main-title { font-family:var(--serif); font-size:1.6rem; letter-spacing:-.01em; line-height:1.15; margin-bottom:.35rem; }
+.sim-main-desc { font-size:.85rem; color:var(--muted); line-height:1.65; max-width:56ch; }
+
+.sim-render { flex:1; padding:2rem 2.25rem; display:flex; flex-direction:column; gap:1.75rem; }
+.sim-vis { width:100%; border:1px solid var(--rule); background:var(--cream); }
+.vis-inner { padding:1.25rem; }
+
+.sim-metrics { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--rule); }
+.sim-metric { padding:1rem 1.25rem; border-right:1px solid var(--rule); transition:background .2s; }
+.sim-metric:last-child { border-right:none; }
+.sim-metric:hover { background:var(--cream); }
+.m-label { font-family:var(--mono); font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
+.m-val { font-family:var(--serif); font-size:1.5rem; line-height:1; letter-spacing:-.02em; }
+.m-sub { font-size:.72rem; color:var(--muted); margin-top:.2rem; }
+
+.ctrl-row { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.ctrl-block { display:flex; flex-direction:column; gap:.45rem; }
+.ctrl-head { display:flex; justify-content:space-between; }
+.ctrl-lbl { font-family:var(--mono); font-size:.65rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.ctrl-val { font-family:var(--mono); font-size:.78rem; font-weight:500; color:var(--ink); }
+input[type="range"] { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--rule); outline:none; cursor:pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; background:var(--ink); cursor:pointer; border:2px solid var(--paper); box-shadow:0 0 0 1px var(--ink); }
+.ctrl-hint { display:flex; justify-content:space-between; font-family:var(--mono); font-size:.58rem; color:var(--muted); margin-top:3px; }
+
+/* SIDEBAR */
+.sim-sidebar { display:flex; flex-direction:column; overflow-y:auto; max-height:calc(100vh - 57px); }
+.s-panel { padding:1.5rem; border-bottom:1px solid var(--rule); }
+.s-eyebrow { font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.85rem; display:flex; align-items:center; gap:.45rem; }
+.s-dot { width:5px; height:5px; border-radius:50%; background:var(--teal); }
+.s-dot.am { background:var(--amber); }
+.s-dot.co { background:var(--coral); }
+
+.insight-box { background:var(--teal-pale); border-left:3px solid var(--teal); padding:1rem 1.1rem; font-size:.84rem; color:var(--ink); line-height:1.65; min-height:70px; transition:all .3s; }
+.insight-box em { font-style:italic; color:var(--teal); }
+
+.var-list { display:flex; flex-direction:column; }
+.var-item { display:flex; justify-content:space-between; align-items:baseline; padding:.65rem 0; border-bottom:1px solid var(--rule); gap:.5rem; }
+.var-item:last-child { border-bottom:none; }
+.var-name { font-family:var(--mono); font-size:.7rem; color:var(--muted); }
+.var-val { font-family:var(--mono); font-size:.72rem; font-weight:500; color:var(--teal); transition:color .3s; }
+
+.concept-list { display:flex; flex-direction:column; }
+.concept-item { padding:.8rem 0; border-bottom:1px solid var(--rule); cursor:pointer; transition:padding-left .15s; }
+.concept-item:last-child { border-bottom:none; }
+.concept-item:hover { padding-left:4px; }
+.concept-term { font-family:var(--serif); font-size:.95rem; margin-bottom:.2rem; }
+.concept-def { font-size:.78rem; color:var(--muted); line-height:1.5; }
+.concept-item.lit { background:var(--teal-pale); padding:.8rem .6rem; margin:0 -.1rem; }
+.concept-item.lit .concept-term { color:var(--teal); }
+
+.scenario-list { display:flex; flex-direction:column; gap:.45rem; }
+.scenario-btn { padding:.7rem .9rem; border:1px solid var(--rule); background:transparent; font-family:var(--sans); font-size:.82rem; color:var(--ink); cursor:pointer; text-align:left; line-height:1.4; transition:all .15s; display:flex; flex-direction:column; gap:.15rem; }
+.scenario-btn:hover { border-color:var(--ink); background:var(--cream); }
+.scenario-btn.active { border-color:var(--teal); background:var(--teal-pale); }
+.scenario-btn small { font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; color:var(--muted); }
+.scenario-btn.active small { color:var(--teal); }
+
+.quiz-q { font-size:.88rem; color:var(--ink); line-height:1.6; margin-bottom:.85rem; font-style:italic; }
+.quiz-opts { display:flex; flex-direction:column; gap:.45rem; }
+.quiz-opt { padding:.6rem .85rem; border:1px solid var(--rule); background:transparent; font-family:var(--sans); font-size:.8rem; color:var(--ink); cursor:pointer; text-align:left; line-height:1.4; transition:all .15s; }
+.quiz-opt:hover { border-color:var(--ink); background:var(--cream); }
+.quiz-opt.correct { border-color:var(--teal); background:var(--teal-pale); color:var(--teal); }
+.quiz-opt.wrong { border-color:var(--coral); background:var(--coral-pale); color:var(--coral); }
+.quiz-fb { margin-top:.75rem; font-size:.78rem; color:var(--muted); line-height:1.5; background:var(--cream); padding:.7rem .85rem; display:none; }
+.quiz-fb.show { display:block; }
+.quiz-next-btn { margin-top:.75rem; font-family:var(--mono); font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; background:var(--ink); color:var(--paper); border:none; padding:.55rem 1.1rem; cursor:pointer; display:none; transition:opacity .2s; }
+.quiz-next-btn:hover { opacity:.75; }
+.quiz-next-btn.show { display:inline-block; }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.fu { opacity:0; animation:fadeUp .55s ease forwards; }
+.d1{animation-delay:.1s} .d2{animation-delay:.22s} .d3{animation-delay:.34s} .d4{animation-delay:.46s}
+
+@media(max-width:860px){
+  .sim-layout{grid-template-columns:1fr}
+  .sim-sidebar{max-height:none;border-top:1px solid var(--rule)}
+  .ctrl-row{grid-template-columns:1fr}
+  .sim-metrics{grid-template-columns:1fr 1fr}
+  .examples-grid{grid-template-columns:1fr}
+  .topbar{padding:1rem 1.25rem}
+  .input-hero{padding:3rem 1.25rem}
+  .sim-render,.sim-main-header{padding:1.25rem}
+}
+</style>
+</head>
+<body>
+
+<!-- VIEW 1: INPUT -->
+<div id="input-view" class="view active">
+  <nav class="topbar">
+    <a href="#" class="brand">Keplr.</a>
+    <div class="topbar-right">
+      <a href="about.html" class="nav-link">About</a>
+      <a href="#" class="nav-link">Sign in</a>
+    </div>
+  </nav>
+
+  <div class="input-hero">
+    <div class="input-eyebrow fu">Text to simulation</div>
+    <h1 class="input-title fu d1">Paste anything.<br>Understand <em>everything.</em></h1>
+    <p class="input-sub fu d2">Drop in a textbook excerpt, lecture notes, or a concept. Keplr extracts the variables and builds a live interactive simulation — instantly.</p>
+
+    <div class="input-box fu d3">
+      <div class="input-box-header">
+        <span class="input-box-label">Your source material</span>
+        <div class="input-tabs">
+          <button class="input-tab active" onclick="switchTab(this,'text')">Paste text</button>
+          <button class="input-tab" onclick="switchTab(this,'topic')">Enter topic</button>
+        </div>
+      </div>
+      <textarea id="main-input" oninput="onInput()" placeholder="Paste a paragraph from your textbook or lecture notes...&#10;&#10;Example: &quot;Osmosis is the movement of water molecules across a selectively permeable membrane from a region of lower solute concentration to a region of higher solute concentration...&quot;"></textarea>
+      <div class="input-box-footer">
+        <span class="char-count" id="char-count">0 characters</span>
+        <button class="generate-btn" id="gen-btn" onclick="startGeneration()" disabled>
+          Generate simulation <span class="arr">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="subject-row fu d4">
+      <span class="subject-label">Quick start:</span>
+      <button class="chip" onclick="fillChip('AP Biology — Osmosis and cell membranes')">AP Biology</button>
+      <button class="chip" onclick="fillChip('AP Chemistry — Le Chatelier\'s Principle and equilibrium')">AP Chemistry</button>
+      <button class="chip" onclick="fillChip('AP Physics — Projectile motion and kinematics')">AP Physics</button>
+      <button class="chip" onclick="fillChip('AP Economics — Supply, demand, and market equilibrium')">AP Econ</button>
+      <button class="chip" onclick="fillChip('Neuroscience — Action potentials and the neuron')">Neuroscience</button>
+    </div>
+
+    <div class="examples-row fu d4">
+      <div class="examples-label">Example simulations</div>
+      <div class="examples-grid">
+        <div class="example-card" onclick="loadExample('osmosis')">
+          <span class="use-arrow">↗</span>
+          <div class="example-subject" style="color:var(--teal)">AP Biology</div>
+          <h4>Osmosis & Cell Membranes</h4>
+          <p>Solute concentration, water potential, cell state</p>
+        </div>
+        <div class="example-card" onclick="loadExample('equilibrium')">
+          <span class="use-arrow">↗</span>
+          <div class="example-subject" style="color:var(--amber)">AP Chemistry</div>
+          <h4>Chemical Equilibrium</h4>
+          <p>Le Chatelier's principle, Q vs K, reaction shifts</p>
+        </div>
+        <div class="example-card" onclick="loadExample('supply')">
+          <span class="use-arrow">↗</span>
+          <div class="example-subject" style="color:var(--purple)">AP Economics</div>
+          <h4>Supply & Demand</h4>
+          <p>Price elasticity, equilibrium shifts</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW 2: LOADING -->
+<div id="loading-view" class="view" style="align-items:center;justify-content:center;">
+  <div class="loading-inner">
+    <div class="loading-icon"></div>
+    <h2 class="loading-title">Building your simulation</h2>
+    <ul class="loading-steps">
+      <li class="loading-step" id="ls1"><span class="step-dot"></span>Parsing source material</li>
+      <li class="loading-step" id="ls2"><span class="step-dot"></span>Identifying variables &amp; relationships</li>
+      <li class="loading-step" id="ls3"><span class="step-dot"></span>Generating simulation model</li>
+      <li class="loading-step" id="ls4"><span class="step-dot"></span>Writing Keplr insights</li>
+      <li class="loading-step" id="ls5"><span class="step-dot"></span>Preparing quiz questions</li>
+    </ul>
+  </div>
+</div>
+
+<!-- VIEW 3: SIMULATION -->
+<div id="sim-view" class="view">
+  <div class="sim-topbar">
+    <div class="sim-topbar-left">
+      <button class="back-btn" onclick="goBack()">← New simulation</button>
+      <div class="topbar-div"></div>
+      <div class="sim-title-bar">
+        <h2 id="sim-heading"></h2>
+        <span class="source-pill"><span class="pdot"></span><span id="sim-source">from your text</span></span>
+      </div>
+    </div>
+    <div class="sim-topbar-right">
+      <button class="icon-btn" onclick="copyShare(this)">Share</button>
+      <button class="icon-btn" onclick="goBack()">New ↗</button>
+    </div>
+  </div>
+  <div class="sim-layout">
+    <div class="sim-main">
+      <div class="sim-main-header">
+        <div class="sim-eyebrow">Interactive simulation</div>
+        <h3 class="sim-main-title" id="sim-main-title"></h3>
+        <p class="sim-main-desc" id="sim-main-desc"></p>
+      </div>
+      <div class="sim-render">
+        <div class="sim-vis"><div class="vis-inner">
+          <canvas id="sim-canvas" style="width:100%;height:260px;display:block;"></canvas>
+        </div></div>
+        <div class="sim-metrics" id="sim-metrics-wrap"></div>
+        <div id="sim-controls-wrap"></div>
+      </div>
+    </div>
+    <div class="sim-sidebar">
+      <div class="s-panel">
+        <div class="s-eyebrow"><span class="s-dot"></span>Keplr insight</div>
+        <div class="insight-box" id="s-insight">Drag the sliders to explore. Keplr explains what's happening and why as you go.</div>
+      </div>
+      <div class="s-panel">
+        <div class="s-eyebrow"><span class="s-dot am"></span>Try a scenario</div>
+        <div class="scenario-list" id="scenario-list"></div>
+      </div>
+      <div class="s-panel">
+        <div class="s-eyebrow"><span class="s-dot co"></span>Live variables</div>
+        <div class="var-list" id="var-list"></div>
+      </div>
+      <div class="s-panel">
+        <div class="s-eyebrow">Key concepts</div>
+        <div class="concept-list" id="concept-list"></div>
+      </div>
+      <div class="s-panel">
+        <div class="s-eyebrow"><span class="s-dot co"></span>Test your intuition</div>
+        <div class="quiz-q" id="qq"></div>
+        <div class="quiz-opts" id="qopts"></div>
+        <div class="quiz-fb" id="qfb"></div>
+        <button class="quiz-next-btn" id="qnext" onclick="nextQ()">Next question →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── VIEWS ──
+function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+
+// ── INPUT ──
+function onInput(){
+  const t=document.getElementById('main-input').value;
+  document.getElementById('char-count').textContent=t.length+' characters';
+  document.getElementById('gen-btn').disabled=t.trim().length<8;
+}
+function switchTab(btn,mode){
+  document.querySelectorAll('.input-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('main-input').placeholder=mode==='topic'
+    ?'Enter a topic, e.g. "Le Chatelier\'s Principle" or "How action potentials work"'
+    :'Paste a paragraph from your textbook or lecture notes...';
+}
+function fillChip(txt){ document.getElementById('main-input').value=txt; onInput(); }
+function loadExample(k){
+  const m={
+    osmosis:'AP Biology — Osmosis & Cell Membranes: water moves across a semipermeable membrane from low to high solute concentration.',
+    equilibrium:'AP Chemistry — Le Chatelier\'s Principle: a system at equilibrium shifts to counteract any disturbance.',
+    supply:'AP Economics — Supply and Demand: equilibrium price is where supply meets demand.'
+  };
+  document.getElementById('main-input').value=m[k]; onInput();
+}
+
+// ── CURRENT SIM STATE ──
+let currentSim = null;
+let animId = null;
+let simVals = {};
+
+// ── GENERATION ──
+async function startGeneration() {
+  const text = document.getElementById('main-input').value.trim();
+  if (!text) return;
+  showView('loading-view');
+  const steps = ['ls1','ls2','ls3','ls4','ls5'];
+  let si = 0;
+  const stepInterval = setInterval(() => {
+    if (si > 0) { document.getElementById(steps[si-1]).classList.remove('active'); document.getElementById(steps[si-1]).classList.add('done'); }
+    if (si < steps.length) { document.getElementById(steps[si]).classList.add('active'); si++; }
+    else clearInterval(stepInterval);
+  }, 600);
+  try {
+    const response = await fetch('http://localhost:3000/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await response.json();
+    clearInterval(stepInterval);
+    if (data.error) { alert('Error: ' + data.error); goBack(); return; }
+    currentSim = data.simulation;
+    buildSimView(currentSim);
+    showView('sim-view');
+    startRenderer();
+  } catch (error) {
+    clearInterval(stepInterval);
+    alert('Could not reach the server. Make sure node server.js is running.');
+    goBack();
+  }
+}
+
+// ── BUILD SIM VIEW ──
+function buildSimView(sim) {
+  document.getElementById('sim-heading').textContent = sim.title;
+  document.getElementById('sim-main-title').textContent = sim.title;
+  document.getElementById('sim-main-desc').textContent = sim.description;
+  document.getElementById('sim-source').textContent = sim.subject || 'from your text';
+
+  // init vals from defaults
+  simVals = {};
+  sim.variables.forEach(v => { simVals[v.id] = v.default; });
+
+  // sliders
+  const ctrlWrap = document.getElementById('sim-controls-wrap');
+  ctrlWrap.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'ctrl-row';
+  sim.variables.forEach(v => {
+    const block = document.createElement('div');
+    block.className = 'ctrl-block';
+    block.innerHTML = `
+      <div class="ctrl-head">
+        <span class="ctrl-lbl">${v.label}</span>
+        <span class="ctrl-val" id="lbl-${v.id}">${v.default} ${v.unit}</span>
+      </div>
+      <input type="range" id="sl-${v.id}" min="${v.min}" max="${v.max}" value="${v.default}" oninput="onSlider('${v.id}','${v.unit}')">
+      <div class="ctrl-hint"><span>${v.min} ${v.unit}</span><span>${v.max} ${v.unit}</span></div>`;
+    row.appendChild(block);
+  });
+  ctrlWrap.appendChild(row);
+
+  // metrics
+  const mw = document.getElementById('sim-metrics-wrap');
+  mw.innerHTML = '';
+  sim.variables.forEach(v => {
+    const m = document.createElement('div');
+    m.className = 'sim-metric';
+    m.innerHTML = `<div class="m-label">${v.label}</div><div class="m-val" id="metric-${v.id}" style="font-size:1.1rem">${v.default} ${v.unit}</div><div class="m-sub">${v.description}</div>`;
+    mw.appendChild(m);
+  });
+
+  // scenarios
+  const sl = document.getElementById('scenario-list');
+  sl.innerHTML = '';
+  (sim.scenarios||[]).forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'scenario-btn';
+    btn.innerHTML = `${s.label}<small>${s.description}</small>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.scenario-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.entries(s.values).forEach(([id,val]) => {
+        const sl = document.getElementById('sl-'+id);
+        if (sl) { sl.value = val; onSlider(id, sim.variables.find(x=>x.id===id)?.unit||''); }
+      });
+    };
+    sl.appendChild(btn);
+  });
+
+  // var list
+  const vl = document.getElementById('var-list');
+  vl.innerHTML = '';
+  sim.variables.forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'var-item';
+    item.innerHTML = `<span class="var-name">${v.label}</span><span class="var-val" id="vv-${v.id}">${v.default} ${v.unit}</span>`;
+    vl.appendChild(item);
+  });
+
+  // concepts
+  const cl = document.getElementById('concept-list');
+  cl.innerHTML = '';
+  (sim.concepts||[]).forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'concept-item';
+    item.innerHTML = `<div class="concept-term">${c.term}</div><div class="concept-def">${c.definition}</div>`;
+    cl.appendChild(item);
+  });
+
+  // quiz
+  buildQuiz(sim.quiz||[]);
+  updateInsight();
+}
+
+// ── SLIDER ──
+function onSlider(id, unit) {
+  if (!currentSim) return;
+  const val = parseFloat(document.getElementById('sl-'+id).value);
+  simVals[id] = val;
+  const display = Number.isInteger(val) ? val : val.toFixed(2);
+  const u = unit || (currentSim.variables.find(x=>x.id===id)?.unit||'');
+  const lbl = document.getElementById('lbl-'+id);
+  const metric = document.getElementById('metric-'+id);
+  const vv = document.getElementById('vv-'+id);
+  if (lbl) lbl.textContent = display+' '+u;
+  if (metric) metric.textContent = display+' '+u;
+  if (vv) vv.textContent = display+' '+u;
+  updateInsight();
+}
+
+// ── INSIGHT ──
+function updateInsight() {
+  if (!currentSim || !currentSim.insights || !currentSim.insights.length) return;
+  const total = Object.values(simVals).reduce((a,b)=>a+b, 0);
+  const idx = Math.floor(total/40) % currentSim.insights.length;
+  document.getElementById('s-insight').textContent = currentSim.insights[idx].text;
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDERERS — one per subject
+// ═══════════════════════════════════════════════════
+
+function detectSubject(subject) {
+  const s = (subject||'').toLowerCase();
+  if (s.includes('bio') || s.includes('osmosis') || s.includes('cell') || s.includes('membrane')) return 'biology';
+  if (s.includes('chem') || s.includes('equilibrium') || s.includes('reaction') || s.includes('chatelier')) return 'chemistry';
+  if (s.includes('phys') || s.includes('motion') || s.includes('force') || s.includes('kinematic') || s.includes('projectile')) return 'physics';
+  if (s.includes('econ') || s.includes('supply') || s.includes('demand') || s.includes('market') || s.includes('price')) return 'economics';
+  return 'generic';
+}
+
+const canvas = document.getElementById('sim-canvas');
+const ctx = canvas.getContext('2d');
+let frame = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.parentElement.offsetWidth - 40;
+  canvas.width = w * dpr;
+  canvas.height = 260 * dpr;
+  canvas.style.width = w+'px';
+  canvas.style.height = '260px';
+  ctx.scale(dpr, dpr);
+}
+
+function startRenderer() {
+  if (animId) cancelAnimationFrame(animId);
+  resizeCanvas();
+  frame = 0;
+  const subject = detectSubject(currentSim?.subject||'');
+  function loop() {
+    frame++;
+    if (subject === 'biology') drawBiology();
+    else if (subject === 'chemistry') drawChemistry();
+    else if (subject === 'physics') drawPhysics();
+    else if (subject === 'economics') drawEconomics();
+    else drawGeneric();
+    animId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ─── HELPER ───
+function getVal(index) {
+  if (!currentSim) return 50;
+  const v = currentSim.variables[index];
+  if (!v) return 50;
+  return simVals[v.id] ?? v.default;
+}
+function getNorm(index) {
+  if (!currentSim) return 0.5;
+  const v = currentSim.variables[index];
+  if (!v) return 0.5;
+  const val = simVals[v.id] ?? v.default;
+  return (val - v.min) / (v.max - v.min);
+}
+
+// ─── BIOLOGY RENDERER ───
+// Shows a cell with solute particles inside and outside, membrane, water flow arrows
+let bioParticlesOut = [], bioParticlesIn = [];
+let bioCellScale = 1.0, bioTargetScale = 1.0;
+let bioInitialized = false;
+
+function initBioParticles() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  const cx = W/2, cy = H/2, r = Math.min(W,H)*0.3;
+  bioParticlesOut = []; bioParticlesIn = [];
+  for (let i=0; i<28; i++) {
+    bioParticlesOut.push({
+      x: Math.random()<.5 ? 12+Math.random()*(cx-r-18) : cx+r+12+Math.random()*(W-cx-r-18),
+      y: 12+Math.random()*(H-24),
+      vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, a:0, r:2.8+Math.random()
+    });
+    const ang=Math.random()*Math.PI*2, d=Math.random()*r*.75;
+    bioParticlesIn.push({ x:cx+Math.cos(ang)*d, y:cy+Math.sin(ang)*d, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, a:0, r:2.8+Math.random() });
+  }
+  bioInitialized = true;
+}
+
+function drawBiology() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  const cx = W/2, cy = H/2, baseR = Math.min(W,H)*0.3;
+  const n0 = getNorm(0), n1 = getNorm(1);
+  const diff = n0 - n1;
+
+  if (!bioInitialized) initBioParticles();
+
+  bioTargetScale = Math.abs(diff)<.04 ? 1.0 : diff>0 ? Math.max(.55,1-diff*.55) : Math.min(1.45,1+Math.abs(diff)*.5);
+  bioCellScale += (bioTargetScale - bioCellScale) * .035;
+  const r = baseR * bioCellScale;
+
+  ctx.clearRect(0,0,W,H);
+
+  // bg zones
+  ctx.fillStyle='rgba(13,122,110,.04)';
+  ctx.fillRect(0,0,cx-r,H); ctx.fillRect(cx+r,0,W-(cx+r),H);
+
+  // dashed outer ring
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r+10,0,Math.PI*2);
+  ctx.strokeStyle='rgba(15,14,12,.07)'; ctx.lineWidth=1; ctx.setLineDash([3,7]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  // cell fill
+  const g = ctx.createRadialGradient(cx-r*.2,cy-r*.25,0,cx,cy,r);
+  g.addColorStop(0,'rgba(212,238,235,.65)'); g.addColorStop(1,'rgba(212,238,235,.22)');
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle='#0d7a6e'; ctx.lineWidth=2.2; ctx.stroke();
+
+  // water flow dots
+  if (Math.abs(diff)>.04) {
+    ctx.save(); ctx.globalAlpha=Math.min(Math.abs(diff)*3,.8);
+    for (let i=0; i<4; i++) {
+      const ang=(i/4)*Math.PI*2+frame*.007;
+      const t=((frame*.018)+i/4)%1;
+      const fx=diff>0?cx+Math.cos(ang)*(r+22):cx+Math.cos(ang)*(r-18);
+      const fy=diff>0?cy+Math.sin(ang)*(r+22):cy+Math.sin(ang)*(r-18);
+      const ex=diff>0?cx+Math.cos(ang)*(r-18):cx+Math.cos(ang)*(r+22);
+      const ey=diff>0?cy+Math.sin(ang)*(r-18):cy+Math.sin(ang)*(r+22);
+      ctx.beginPath(); ctx.arc(fx+(ex-fx)*t,fy+(ey-fy)*t,3.5,0,Math.PI*2);
+      ctx.fillStyle='#1a5fa8'; ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // solute outside
+  const outCount = Math.round(n0*26);
+  bioParticlesOut.forEach((p,i) => {
+    p.a += (i<outCount?1:0-p.a)*.07; p.a=Math.max(0,Math.min(1,p.a));
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<10||p.x>W-10) p.vx*=-1;
+    if(p.y<10||p.y>H-10) p.vy*=-1;
+    const dx=p.x-cx,dy=p.y-cy;
+    if(Math.sqrt(dx*dx+dy*dy)<r+p.r+2){const a=Math.atan2(dy,dx);p.x=cx+Math.cos(a)*(r+p.r+3);p.y=cy+Math.sin(a)*(r+p.r+3);p.vx=Math.cos(a)*.5;p.vy=Math.sin(a)*.5;}
+    if(p.a>.05){ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(212,130,10,${p.a*.65})`;ctx.fill();ctx.strokeStyle=`rgba(212,130,10,${p.a})`;ctx.lineWidth=.7;ctx.stroke();}
+  });
+
+  // solute inside
+  const inCount = Math.round(n1*26);
+  bioParticlesIn.forEach((p,i) => {
+    p.a += (i<inCount?1:0-p.a)*.07; p.a=Math.max(0,Math.min(1,p.a));
+    p.x+=p.vx; p.y+=p.vy;
+    const dx=p.x-cx,dy=p.y-cy;
+    if(Math.sqrt(dx*dx+dy*dy)>r-p.r-2){const a=Math.atan2(dy,dx);p.x=cx+Math.cos(a)*(r-p.r-3);p.y=cy+Math.sin(a)*(r-p.r-3);p.vx=-Math.cos(a)*.4;p.vy=-Math.sin(a)*.4;}
+    if(p.a>.05){ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(79,60,168,${p.a*.55})`;ctx.fill();ctx.strokeStyle=`rgba(79,60,168,${p.a})`;ctx.lineWidth=.7;ctx.stroke();}
+  });
+
+  // labels
+  ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(107,104,96,.6)';
+  ctx.fillText('● outside solute',12,H-10);
+  ctx.fillStyle='rgba(79,60,168,.6)';
+  ctx.fillText('● inside solute',152,H-10);
+}
+
+// ─── CHEMISTRY RENDERER ───
+// Two chambers separated by a divider. Reactant molecules left, product molecules right.
+// Equilibrium arrow in the middle shifts based on Q vs K.
+function drawChemistry() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  ctx.clearRect(0,0,W,H);
+
+  const n0 = getNorm(0); // reactant concentration
+  const n1 = getNorm(1); // product concentration (or temperature/pressure)
+
+  const chamberY = 40, chamberH = 180;
+  const leftW = W*0.42, rightW = W*0.42;
+  const leftX = 20, rightX = W-20-rightW;
+  const divX = W/2;
+
+  // chamber backgrounds
+  ctx.fillStyle='rgba(212,130,10,.08)';
+  ctx.fillRect(leftX, chamberY, leftW, chamberH);
+  ctx.fillStyle='rgba(79,60,168,.08)';
+  ctx.fillRect(rightX, chamberY, rightW, chamberH);
+
+  // chamber borders
+  ctx.strokeStyle='rgba(15,14,12,.15)'; ctx.lineWidth=1;
+  ctx.strokeRect(leftX, chamberY, leftW, chamberH);
+  ctx.strokeRect(rightX, chamberY, rightW, chamberH);
+
+  // chamber labels
+  ctx.font='500 11px "DM Mono"'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(212,130,10,.8)';
+  ctx.fillText('REACTANTS', leftX+leftW/2, chamberY-10);
+  ctx.fillStyle='rgba(79,60,168,.8)';
+  ctx.fillText('PRODUCTS', rightX+rightW/2, chamberY-10);
+
+  // draw reactant molecules (circles, count based on n0)
+  const reactCount = Math.round(n0*14)+2;
+  for (let i=0; i<16; i++) {
+    const seed = i*137.5;
+    const px = leftX+18+(Math.abs(Math.sin(seed))*( leftW-36));
+    const py = chamberY+18+(Math.abs(Math.cos(seed*1.3))*(chamberH-36));
+    const alpha = i<reactCount ? 0.75 : 0.08;
+    const wobble = Math.sin(frame*0.04+i)*1.5;
+    ctx.beginPath();
+    ctx.arc(px+wobble, py+Math.cos(frame*0.03+i)*1.5, 7, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(212,130,10,${alpha})`;
+    ctx.fill();
+    ctx.strokeStyle=`rgba(180,100,0,${alpha})`; ctx.lineWidth=1;
+    ctx.stroke();
+  }
+
+  // draw product molecules (different shape - slightly larger)
+  const prodCount = Math.round(n1*14)+2;
+  for (let i=0; i<16; i++) {
+    const seed = i*97.3+50;
+    const px = rightX+18+(Math.abs(Math.sin(seed))*(rightW-36));
+    const py = chamberY+18+(Math.abs(Math.cos(seed*1.7))*(chamberH-36));
+    const alpha = i<prodCount ? 0.75 : 0.08;
+    const wobble = Math.sin(frame*0.04+i+5)*1.5;
+    ctx.beginPath();
+    ctx.arc(px+wobble, py+Math.cos(frame*0.03+i+5)*1.5, 8, 0, Math.PI*2);
+    ctx.fillStyle=`rgba(79,60,168,${alpha})`;
+    ctx.fill();
+    ctx.strokeStyle=`rgba(60,40,150,${alpha})`; ctx.lineWidth=1;
+    ctx.stroke();
+  }
+
+  // equilibrium arrow in middle
+  const diff = n0-n1;
+  const arrowCx = divX;
+  const arrowY = chamberY+chamberH/2;
+
+  // forward arrow (left to right) — stronger when reactants > products
+  const fwdAlpha = Math.max(0.1, Math.min(1, 0.5+diff*1.2));
+  ctx.strokeStyle=`rgba(13,122,110,${fwdAlpha})`; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(arrowCx-28,arrowY-8); ctx.lineTo(arrowCx+28,arrowY-8);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(arrowCx+20,arrowY-14); ctx.lineTo(arrowCx+28,arrowY-8); ctx.lineTo(arrowCx+20,arrowY-2);
+  ctx.stroke();
+
+  // reverse arrow (right to left) — stronger when products > reactants
+  const revAlpha = Math.max(0.1, Math.min(1, 0.5-diff*1.2));
+  ctx.strokeStyle=`rgba(13,122,110,${revAlpha})`; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(arrowCx+28,arrowY+8); ctx.lineTo(arrowCx-28,arrowY+8);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(arrowCx-20,arrowY+2); ctx.lineTo(arrowCx-28,arrowY+8); ctx.lineTo(arrowCx-20,arrowY+14);
+  ctx.stroke();
+
+  // equilibrium label
+  ctx.font='500 9px "DM Mono"'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(13,122,110,.6)';
+  ctx.fillText('K eq', arrowCx, arrowY+30);
+
+  // state label
+  ctx.font='500 11px "DM Mono"'; ctx.textAlign='center';
+  let stateLabel = 'At equilibrium';
+  let stateColor = '#0d7a6e';
+  if (Math.abs(diff)>.15 && diff>0) { stateLabel='Shifting → forward'; stateColor='#d4820a'; }
+  else if (Math.abs(diff)>.15 && diff<0) { stateLabel='Shifting ← reverse'; stateColor='#4f3ca8'; }
+  ctx.fillStyle=stateColor;
+  ctx.fillText(stateLabel, W/2, chamberY+chamberH+22);
+
+  ctx.textAlign='left';
+}
+
+// ─── PHYSICS RENDERER ───
+// Shows projectile trajectory arc. Angle from var0, velocity from var1.
+function drawPhysics() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  ctx.clearRect(0,0,W,H);
+
+  const n0 = getNorm(0); // angle 0-90 deg or first variable
+  const n1 = getNorm(1); // velocity or second variable
+
+  const angle = n0 * 85 + 5; // degrees 5-90
+  const velocity = n1 * 80 + 20; // m/s 20-100
+  const angleRad = angle * Math.PI / 180;
+  const g = 9.8;
+
+  // ground line
+  const groundY = H - 40;
+  ctx.strokeStyle='rgba(15,14,12,.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(30,groundY); ctx.lineTo(W-30,groundY); ctx.stroke();
+
+  // grid lines (subtle)
+  ctx.strokeStyle='rgba(15,14,12,.05)'; ctx.lineWidth=1;
+  for (let y=groundY-40; y>40; y-=40) {
+    ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(W-30,y); ctx.stroke();
+  }
+
+  // compute trajectory
+  const totalTime = (2*velocity*Math.sin(angleRad))/g;
+  const maxRange = velocity*Math.cos(angleRad)*totalTime;
+  const maxHeight = (velocity*velocity*Math.sin(angleRad)*Math.sin(angleRad))/(2*g);
+
+  const scaleX = (W-80)/Math.max(maxRange,1);
+  const scaleY = (groundY-60)/Math.max(maxHeight,1);
+  const scale = Math.min(scaleX, scaleY) * 0.9;
+
+  const startX = 45;
+  const steps = 80;
+
+  // trajectory path
+  ctx.beginPath();
+  for (let i=0; i<=steps; i++) {
+    const t = (i/steps)*totalTime;
+    const x = startX + velocity*Math.cos(angleRad)*t*scale;
+    const y = groundY - velocity*Math.sin(angleRad)*t*scale + 0.5*g*t*t*scale;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='rgba(13,122,110,.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // animate projectile ball along path
+  const animT = ((frame*0.015)%1)*totalTime;
+  const ballX = startX + velocity*Math.cos(angleRad)*animT*scale;
+  const ballY = groundY - velocity*Math.sin(angleRad)*animT*scale + 0.5*g*animT*animT*scale;
+  ctx.beginPath(); ctx.arc(ballX, ballY, 7, 0, Math.PI*2);
+  ctx.fillStyle='#0d7a6e'; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // launch angle indicator
+  ctx.strokeStyle='rgba(212,130,10,.7)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(startX, groundY);
+  ctx.lineTo(startX+Math.cos(angleRad)*40, groundY-Math.sin(angleRad)*40);
+  ctx.stroke();
+
+  // angle arc
+  ctx.beginPath(); ctx.arc(startX, groundY, 22, -angleRad, 0);
+  ctx.strokeStyle='rgba(212,130,10,.4)'; ctx.lineWidth=1; ctx.stroke();
+
+  // labels
+  ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(212,130,10,.8)';
+  ctx.fillText(`${Math.round(angle)}°`, startX+26, groundY-8);
+
+  // max height marker
+  const peakX = startX + velocity*Math.cos(angleRad)*(totalTime/2)*scale;
+  const peakY = groundY - maxHeight*scale;
+  ctx.strokeStyle='rgba(15,14,12,.15)'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(peakX,peakY); ctx.lineTo(peakX,groundY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(15,14,12,.5)';
+  ctx.fillText(`h: ${maxHeight.toFixed(1)}m`, peakX+5, peakY-6);
+
+  // range label
+  const landX = startX + maxRange*scale;
+  ctx.fillText(`range: ${maxRange.toFixed(1)}m`, Math.min(landX-60, W-130), groundY+18);
+
+  // launch arrow
+  ctx.strokeStyle='rgba(13,122,110,.6)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(startX, groundY);
+  ctx.lineTo(startX+Math.cos(angleRad)*28, groundY-Math.sin(angleRad)*28);
+  ctx.stroke();
+}
+
+// ─── ECONOMICS RENDERER ───
+// Supply and demand curves crossing. Equilibrium point marked.
+function drawEconomics() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  ctx.clearRect(0,0,W,H);
+
+  const n0 = getNorm(0); // demand shifter
+  const n1 = getNorm(1); // supply shifter
+
+  const padL=60, padB=40, padR=30, padT=30;
+  const chartW = W-padL-padR, chartH = H-padB-padT;
+
+  // axes
+  ctx.strokeStyle='rgba(15,14,12,.3)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+chartH); ctx.lineTo(padL+chartW,padT+chartH); ctx.stroke();
+
+  // axis labels
+  ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(107,104,96,.8)'; ctx.textAlign='center';
+  ctx.fillText('Quantity', padL+chartW/2, H-8);
+  ctx.save(); ctx.translate(14, padT+chartH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Price', 0, 0); ctx.restore();
+  ctx.textAlign='left';
+
+  // subtle grid
+  ctx.strokeStyle='rgba(15,14,12,.05)'; ctx.lineWidth=1;
+  for (let i=1; i<5; i++) {
+    const y = padT+chartH*(i/5);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
+    const x = padL+chartW*(i/5);
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+chartH); ctx.stroke();
+  }
+
+  // demand curve — downward sloping, shifts right with n0
+  const dShift = n0*chartW*0.35;
+  ctx.strokeStyle='#1a5fa8'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(padL+dShift+chartW*0.05, padT+chartH*0.05);
+  ctx.lineTo(padL+dShift+chartW*0.75, padT+chartH*0.92);
+  ctx.stroke();
+  ctx.font='600 11px "DM Mono"'; ctx.fillStyle='#1a5fa8';
+  ctx.fillText('D', padL+dShift+chartW*0.77, padT+chartH*0.88);
+
+  // supply curve — upward sloping, shifts right with n1
+  const sShift = (1-n1)*chartW*0.3;
+  ctx.strokeStyle='#c94f2c'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(padL+sShift+chartW*0.05, padT+chartH*0.92);
+  ctx.lineTo(padL+sShift+chartW*0.75, padT+chartH*0.05);
+  ctx.stroke();
+  ctx.fillStyle='#c94f2c';
+  ctx.fillText('S', padL+sShift+chartW*0.77, padT+chartH*0.1);
+
+  // find intersection
+  // D line: y = padT+chartH*0.05 + (0.87*chartH)/(0.7*chartW) * (x - (padL+dShift+chartW*0.05)) — going DOWN
+  // S line: y = padT+chartH*0.92 - (0.87*chartH)/(0.7*chartW) * (x - (padL+sShift+chartW*0.05)) — going UP
+  const slope = (0.87*chartH)/(0.7*chartW);
+  const dIntercept = padT+chartH*0.05 - slope*(padL+dShift+chartW*0.05);
+  const sIntercept = padT+chartH*0.92 + slope*(padL+sShift+chartW*0.05);
+  // D: y = slope*x + dIntercept (wait, demand goes DOWN so slope is positive in screen coords)
+  // demand: y = (padT+0.05*chartH) + slope*(x-(padL+dShift+0.05*chartW))
+  // supply: y = (padT+0.92*chartH) - slope*(x-(padL+sShift+0.05*chartW))
+  // intersection: D_y = S_y
+  // (padT+0.05*chartH) + slope*(x - d0) = (padT+0.92*chartH) - slope*(x - s0)
+  // slope*x - slope*d0 + slope*x - slope*s0 = 0.87*chartH
+  // 2*slope*x = 0.87*chartH + slope*(d0+s0)
+  const d0 = padL+dShift+chartW*0.05;
+  const s0 = padL+sShift+chartW*0.05;
+  const eqX = (0.87*chartH/slope + d0 + s0)/2;
+  const eqY = (padT+0.05*chartH) + slope*(eqX-d0);
+
+  // equilibrium point
+  if (eqX>padL && eqX<padL+chartW && eqY>padT && eqY<padT+chartH) {
+    // dashed lines to axes
+    ctx.strokeStyle='rgba(13,122,110,.35)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(eqX,eqY); ctx.lineTo(eqX,padT+chartH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(eqX,eqY); ctx.lineTo(padL,eqY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // equilibrium dot
+    ctx.beginPath(); ctx.arc(eqX, eqY, 6, 0, Math.PI*2);
+    ctx.fillStyle='#0d7a6e'; ctx.fill();
+    ctx.strokeStyle='white'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // equilibrium label
+    ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(13,122,110,.8)';
+    const lblX = eqX+10 < padL+chartW-60 ? eqX+10 : eqX-70;
+    ctx.fillText('P*', padL+2, eqY+4);
+    ctx.fillText('Q*', eqX-4, padT+chartH+15);
+  }
+
+  // surplus/shortage indicator
+  ctx.font='500 10px "DM Mono"'; ctx.textAlign='center';
+  let stateLabel = 'Market equilibrium';
+  let stateColor = '#0d7a6e';
+  if (n0>n1+0.2) { stateLabel='Demand > Supply — price rising'; stateColor='#1a5fa8'; }
+  else if (n1>n0+0.2) { stateLabel='Supply > Demand — price falling'; stateColor='#c94f2c'; }
+  ctx.fillStyle=stateColor;
+  ctx.fillText(stateLabel, padL+chartW/2, padT-12);
+  ctx.textAlign='left';
+}
+
+// ─── GENERIC RENDERER ───
+// Fallback: animated particles moving between two states based on variable values
+function drawGeneric() {
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.width/dpr, H = 260;
+  ctx.clearRect(0,0,W,H);
+
+  const n0 = getNorm(0);
+  const n1 = getNorm(1);
+
+  const barCount = 5;
+  const barW = (W-80)/(barCount*2);
+  const baseX = 40;
+  const baseY = H-50;
+
+  // animated bar chart
+  for (let i=0; i<barCount; i++) {
+    const seed = (i+1)/barCount;
+    const h0 = (n0*seed*0.8+0.1)*(H-100);
+    const h1 = (n1*(1-seed*0.5+0.3))*(H-100)*0.9;
+    const x0 = baseX + i*(barW*2+12);
+    const x1 = x0+barW+4;
+    const animH0 = h0*(0.95+Math.sin(frame*0.03+i)*0.05);
+    const animH1 = h1*(0.95+Math.cos(frame*0.03+i)*0.05);
+
+    ctx.fillStyle='rgba(13,122,110,.55)';
+    ctx.fillRect(x0, baseY-animH0, barW, animH0);
+    ctx.fillStyle='rgba(212,130,10,.55)';
+    ctx.fillRect(x1, baseY-animH1, barW, animH1);
+  }
+
+  // axis
+  ctx.strokeStyle='rgba(15,14,12,.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(35,30); ctx.lineTo(35,baseY); ctx.lineTo(W-30,baseY); ctx.stroke();
+
+  ctx.font='500 10px "DM Mono"'; ctx.fillStyle='rgba(107,104,96,.6)'; ctx.textAlign='center';
+  ctx.fillText('Variable 1 vs Variable 2', W/2, H-15);
+  ctx.textAlign='left';
+}
+
+// ── QUIZ ──
+let qi=0, qanswered=false, currentQuiz=[];
+function buildQuiz(questions){ currentQuiz=questions; qi=0; renderQuiz(); }
+function renderQuiz(){
+  if(!currentQuiz.length) return;
+  const Q=currentQuiz[qi];
+  document.getElementById('qq').textContent=Q.question;
+  const opts=document.getElementById('qopts');
+  opts.innerHTML='';
+  Q.options.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='quiz-opt'; b.textContent=o;
+    b.onclick=()=>answerQ(b,i===Q.correct,Q.explanation);
+    opts.appendChild(b);
+  });
+  document.getElementById('qfb').classList.remove('show');
+  document.getElementById('qnext').classList.remove('show');
+  qanswered=false;
+}
+function answerQ(btn,correct,fb){
+  if(qanswered) return; qanswered=true;
+  btn.classList.add(correct?'correct':'wrong');
+  if(!correct) document.querySelectorAll('.quiz-opt')[currentQuiz[qi].correct].classList.add('correct');
+  const f=document.getElementById('qfb'); f.textContent=fb; f.classList.add('show');
+  document.getElementById('qnext').classList.add('show');
+}
+function nextQ(){ qi=(qi+1)%currentQuiz.length; renderQuiz(); }
+
+// ── NAV ──
+function goBack(){
+  if(animId){ cancelAnimationFrame(animId); animId=null; }
+  bioInitialized=false;
+  document.querySelectorAll('.loading-step').forEach(s=>s.classList.remove('active','done'));
+  showView('input-view');
+}
+function copyShare(btn){
+  const o=btn.textContent; btn.textContent='Link copied ✓';
+  setTimeout(()=>btn.textContent=o,2000);
+}
+window.addEventListener('resize',()=>{
+  if(document.getElementById('sim-view').classList.contains('active')){ resizeCanvas(); bioInitialized=false; }
+});
+</script>
+</body>
+</html>
