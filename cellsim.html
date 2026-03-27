@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keplr. — Cell Structure & Organelles · AP Biology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Base design system — matches substrate-osmosis.html */
+  --ink: #0f0e0c;
+  --paper: #f5f2ed;
+  --cream: #ede8e0;
+  --rule: rgba(15,14,12,0.12);
+  --rule-mid: rgba(15,14,12,0.22); /* new — not in osmosis */
+  --muted: #6b6860;
+  --teal: #0d7a6e;
+  --teal-pale: #d4eeeb;
+  --teal-mid: #1a9d8f;
+  --amber: #d4820a;
+  --amber-pale: #fdf3dc;
+  --coral: #c94f2c;
+  --coral-pale: #fde8e0;
+  --blue: #1a5fa8;
+  --blue-pale: #ddeaf9;
+  --serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --mono: 'DM Mono', 'Courier New', Courier, monospace;
+  --sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+
+  /* Organelle fill colors */
+  --org-nucleus: #1a5fa8;
+  --org-mito: #d4820a;
+  --org-rer: #0d7a6e;
+  --org-ser: #c94f2c;
+  --org-golgi: #7a3ca8;
+  --org-ribo: #6b8a10;
+  --org-lyso: #4f3ca8;
+  --org-vacuole: #0a7a7a;
+  --org-chloro: #2d7a3a;
+  --org-nucleoid: #3a6b2a;
+  --org-plasmid: #b5600a;
+  --org-flagellum: #6b6860;
+  --org-membrane: #0f0e0c;
+  --org-wall: #0f0e0c;
+
+  /* Organelle pale (badge backgrounds) */
+  --org-nucleus-pale: #ddeaf9;
+  --org-mito-pale: #fdf3dc;
+  --org-rer-pale: #d4eeeb;
+  --org-ser-pale: #fde8e0;
+  --org-golgi-pale: #ede8f8;
+  --org-ribo-pale: #eef4d0;
+  --org-lyso-pale: #e8e4f8;
+  --org-vacuole-pale: #cceeed;
+  --org-chloro-pale: #d4edda;
+  --org-nucleoid-pale: #d8eccc;
+  --org-plasmid-pale: #f5e2cc;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 2rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 1.25rem; }
+.brand { font-family: var(--serif); font-size: 1.1rem; color: var(--ink); text-decoration: none; }
+.breadcrumb {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; color: var(--muted);
+}
+.breadcrumb-sep { opacity: 0.4; }
+
+/* ── LAYOUT ── */
+.main {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 56px - 120px); /* 56px topbar + ~120px page-intro */
+}
+.viewer-col {
+  flex: 0 0 60%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem;
+  border-right: 1px solid var(--rule);
+}
+.svg-wrapper {
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  position: relative;
+  overflow: hidden;
+}
+.cell-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 0.4s ease;
+}
+.sidebar {
+  flex: 0 0 40%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cell-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.cell-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cell-tab:hover { color: var(--ink); }
+.cell-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+.info-panel {
+  padding: 1.5rem;
+  min-height: 180px;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.info-default {
+  font-style: italic;
+  color: var(--muted);
+  text-align: center;
+}
+.organelle-list-region {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+.organelle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.organelle-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.12s;
+  border-left: 3px solid transparent;
+}
+.organelle-list-item:hover { background: var(--cream); }
+.organelle-list-item.active { background: var(--cream); }
+.org-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.info-name {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+.info-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+  border: 1px solid transparent;
+}
+.info-nickname {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+.info-desc {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.info-found {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.org-group { transition: opacity 0.25s ease; }
+.org-group.dimmed { opacity: 0.3; pointer-events: none; }
+
+/* ── AMBIENT ANIMATIONS ── */
+@keyframes orgPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes mitoGlow {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--org-mito)); }
+  50% { filter: drop-shadow(0 0 8px var(--org-mito)); }
+}
+
+/* Apply ambient pulse to all organelle groups except when dimmed */
+.org-group:not(.dimmed) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orgPulse 3s ease-in-out infinite;
+}
+/* Stagger each group's delay via nth-child */
+.org-group:nth-child(1):not(.dimmed) { animation-delay: 0s; }
+.org-group:nth-child(2):not(.dimmed) { animation-delay: 0.4s; }
+.org-group:nth-child(3):not(.dimmed) { animation-delay: 0.8s; }
+.org-group:nth-child(4):not(.dimmed) { animation-delay: 1.2s; }
+.org-group:nth-child(5):not(.dimmed) { animation-delay: 1.6s; }
+.org-group:nth-child(6):not(.dimmed) { animation-delay: 2.0s; }
+.org-group:nth-child(7):not(.dimmed) { animation-delay: 2.4s; }
+.org-group:nth-child(8):not(.dimmed) { animation-delay: 2.8s; }
+.org-group:nth-child(9):not(.dimmed) { animation-delay: 0.6s; }
+.org-group:nth-child(10):not(.dimmed) { animation-delay: 1.0s; }
+
+/* Mitochondria extra glow */
+[data-organelle-id="mito"]:not(.dimmed) {
+  animation: orgPulse 3s ease-in-out infinite, mitoGlow 4s ease-in-out infinite;
+  animation-delay: 0.8s, 1s;
+}
+
+/* ── FUNCTIONAL ANIMATIONS (triggered on selection) ── */
+
+/* Nucleus: DNA helix lines animate */
+@keyframes dnaSlide { to { stroke-dashoffset: 40; } }
+.anim-nucleus .dna-line { animation: dnaSlide 1.5s linear infinite; }
+.anim-nucleus circle:nth-child(3) { fill-opacity: 0.7 !important; }
+
+/* Mitochondria: intensified glow */
+@keyframes mitoSelected {
+  0%, 100% { filter: drop-shadow(0 0 10px var(--org-mito)); }
+  50% { filter: drop-shadow(0 0 22px var(--org-mito)); }
+}
+.anim-mito { animation: mitoSelected 1s ease-in-out infinite !important; }
+
+/* Rough ER: travelling dot — motion uses begin="0s" in SVG markup, CSS just shows the dot */
+.anim-rer .rer-dot { opacity: 1 !important; }
+
+/* Smooth ER: stroke color pulse */
+@keyframes serPulse {
+  0%, 100% { stroke: var(--org-ser); }
+  50% { stroke: #f0a090; }
+}
+.anim-ser path { animation: serPulse 1.5s ease-in-out infinite; }
+
+/* Golgi: vesicle budding */
+@keyframes vesicleOut {
+  0% { transform: translate(0, 0); opacity: 0.8; }
+  100% { transform: translate(20px, -15px); opacity: 0; }
+}
+.anim-golgi .golgi-vesicle { animation: vesicleOut 1.5s ease-out infinite; fill-opacity: 0.8 !important; }
+.anim-golgi .golgi-vesicle:nth-of-type(2) { animation-delay: 0.5s; }
+.anim-golgi .golgi-vesicle:nth-of-type(3) { animation-delay: 1s; }
+
+/* Ribosomes: brighten group */
+@keyframes riboBright { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.anim-ribo circle { animation: riboBright 0.8s ease-in-out infinite !important; }
+
+/* Lysosome: pulsing glow */
+@keyframes lysoGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px var(--org-lyso)); }
+  50% { filter: drop-shadow(0 0 12px var(--org-lyso)); }
+}
+.anim-lyso { animation: lysoGlow 1.2s ease-in-out infinite !important; }
+
+/* Vacuole: ripple ring — use scale() since SVG 'r' can't be animated via CSS */
+@keyframes vacuoleRipple {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.anim-vacuole .vacuole-ripple {
+  animation: vacuoleRipple 1.5s ease-out infinite;
+  opacity: 1 !important;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Nucleoid: opacity pulse */
+@keyframes nucleoidPulse { 0%, 100% { fill-opacity: 0.25; } 50% { fill-opacity: 0.55; } }
+.anim-nucleoid path { animation: nucleoidPulse 1.2s ease-in-out infinite; }
+
+/* Flagellum: wave motion */
+@keyframes flagWave { to { stroke-dashoffset: 200; } }
+.anim-flagellum path { animation: flagWave 1s linear infinite; }
+
+/* Plasmid: slow spin */
+@keyframes plasmidSpin { to { transform: rotate(360deg); } }
+.anim-plasmid {
+  animation: plasmidSpin 4s linear infinite !important;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Cell membrane: stroke-width pulse */
+@keyframes membraneGlow { 0%, 100% { stroke-width: 3; } 50% { stroke-width: 6; } }
+.anim-membrane path, .anim-membrane ellipse, .anim-membrane rect { animation: membraneGlow 1s ease-in-out infinite; }
+
+/* Cell wall: stroke-width pulse (slower) */
+@keyframes wallGlow { 0%, 100% { stroke-width: 8; } 50% { stroke-width: 14; } }
+.anim-wall rect, .anim-wall ellipse { animation: wallGlow 1.5s ease-in-out infinite; }
+
+/* Chloroplast: flash */
+@keyframes chloroFlash {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px var(--org-chloro)); }
+  50% { filter: brightness(1.8) drop-shadow(0 0 16px var(--org-chloro)); }
+}
+.anim-chloro { animation: chloroFlash 1.2s ease-in-out infinite !important; }
+
+/* ── FINAL POLISH ── */
+.org-group { cursor: pointer; }
+.org-group:hover:not(.dimmed) { opacity: 0.85; }
+
+.page-intro {
+  padding: 2rem 2rem 0;
+  border-bottom: 1px solid var(--rule);
+  max-width: 560px;
+}
+.page-title {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.page-title em { font-style: italic; color: var(--teal); }
+.page-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  .viewer-col { flex: none; width: 100%; border-right: none; border-bottom: 1px solid var(--rule); }
+  .sidebar { flex: none; width: 100%; }
+  .organelle-list-region { max-height: 300px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <a href="landing.html" class="brand">Keplr.</a>
+    <nav class="breadcrumb">
+      <span>AP Biology</span>
+      <span class="breadcrumb-sep">/</span>
+      <span>Cell Structure Simulation Demo</span>
+    </nav>
+  </div>
+</header>
+
+<div class="page-intro">
+  <h1 class="page-title">Cell Structure<br><em>&amp; Organelles</em></h1>
+  <p class="page-sub">Explore the structures that make life work. Switch between cell types and click any organelle to learn more.</p>
+</div>
+
+<main class="main">
+  <div class="viewer-col">
+    <div class="svg-wrapper">
+      <svg class="cell-svg" id="cellSvg" viewBox="0 0 600 500" xmlns="http://www.w3.org/2000/svg">
+      </svg>
+    </div>
+  </div>
+  <aside class="sidebar">
+    <div class="cell-tabs">
+      <button class="cell-tab active" data-cell="animal">Animal</button>
+      <button class="cell-tab" data-cell="plant">Plant</button>
+      <button class="cell-tab" data-cell="prokaryote">Prokaryote</button>
+    </div>
+    <div class="info-panel" id="infoPanel">
+      <p class="info-default">Click any organelle to explore it.</p>
+    </div>
+    <div class="organelle-list-region">
+      <ul class="organelle-list" id="organelleList"></ul>
+    </div>
+  </aside>
+</main>
+
+<script>
+const ORGANELLES = [
+  {
+    id: 'membrane',
+    name: 'Cell Membrane',
+    nickname: '// the gatekeeper',
+    colorVar: '--org-membrane',
+    colorPaleVar: null,
+    description: 'A phospholipid bilayer that surrounds all cells and controls what enters and exits. It maintains the internal environment of the cell and regulates transport of substances.',
+    foundIn: ['animal', 'plant', 'prokaryote'],
+    animClass: 'anim-membrane',
+  },
+  {
+    id: 'wall',
+    name: 'Cell Wall',
+    nickname: '// rigid support',
+    colorVar: '--org-wall',
+    colorPaleVar: null,
+    description: 'A rigid outer layer made of cellulose (in plants) or peptidoglycan (in bacteria) that provides structural support and protection. It lies outside the cell membrane and maintains the cell\'s shape.',
+    foundIn: ['plant', 'prokaryote'],
+    animClass: 'anim-wall',
+  },
+  {
+    id: 'nucleus',
+    name: 'Nucleus',
+    nickname: '// the control center',
+    colorVar: '--org-nucleus',
+    colorPaleVar: '--org-nucleus-pale',
+    description: 'Houses the cell\'s DNA and directs all cellular activity by regulating gene expression. It is bounded by a double-layered nuclear envelope and contains the nucleolus, which produces ribosomes.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-nucleus',
+  },
+  {
+    id: 'mito',
+    name: 'Mitochondria',
+    nickname: '// the powerhouse',
+    colorVar: '--org-mito',
+    colorPaleVar: '--org-mito-pale',
+    description: 'The site of cellular respiration, where glucose is converted into ATP — the cell\'s usable energy currency. The folded inner membrane (cristae) maximizes surface area for ATP production.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-mito',
+  },
+  {
+    id: 'rer',
+    name: 'Rough ER',
+    nickname: '// the protein factory',
+    colorVar: '--org-rer',
+    colorPaleVar: '--org-rer-pale',
+    description: 'The rough endoplasmic reticulum is studded with ribosomes that synthesize proteins destined for secretion or insertion into membranes. It is continuous with the nuclear envelope.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-rer',
+  },
+  {
+    id: 'ser',
+    name: 'Smooth ER',
+    nickname: '// the lipid lab',
+    colorVar: '--org-ser',
+    colorPaleVar: '--org-ser-pale',
+    description: 'The smooth endoplasmic reticulum lacks ribosomes and specializes in lipid synthesis, detoxification of drugs and poisons, and calcium storage. It is connected to the rough ER.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-ser',
+  },
+  {
+    id: 'golgi',
+    name: 'Golgi Apparatus',
+    nickname: '// the shipping center',
+    colorVar: '--org-golgi',
+    colorPaleVar: '--org-golgi-pale',
+    description: 'Receives proteins from the rough ER, modifies and packages them, then ships them to their final destination — whether inside the cell, the membrane, or outside the cell via secretion.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-golgi',
+  },
+  {
+    id: 'ribo',
+    name: 'Ribosomes',
+    nickname: '// the translators',
+    colorVar: '--org-ribo',
+    colorPaleVar: '--org-ribo-pale',
+    description: 'Molecular machines that translate mRNA into protein. Found free in the cytoplasm or bound to the rough ER. Prokaryotic ribosomes (70S) are smaller than eukaryotic ribosomes (80S).',
+    foundIn: ['animal', 'plant', 'prokaryote'],
+    animClass: 'anim-ribo',
+  },
+  {
+    id: 'lyso',
+    name: 'Lysosome',
+    nickname: '// the cleanup crew',
+    colorVar: '--org-lyso',
+    colorPaleVar: '--org-lyso-pale',
+    description: 'A membrane-bound organelle containing digestive enzymes that break down waste materials, cellular debris, and foreign invaders. Maintains its acidic interior (pH ~4.5) to keep enzymes active.',
+    foundIn: ['animal'],
+    animClass: 'anim-lyso',
+  },
+  {
+    id: 'vacuole',
+    name: 'Vacuole',
+    nickname: '// storage and pressure',
+    colorVar: '--org-vacuole',
+    colorPaleVar: '--org-vacuole-pale',
+    description: 'In animal cells, small vacuoles temporarily store materials. In plant cells, the large central vacuole maintains turgor pressure, stores water and nutrients, and contributes to cell rigidity.',
+    foundIn: ['animal', 'plant'],
+    animClass: 'anim-vacuole',
+  },
+  {
+    id: 'chloro',
+    name: 'Chloroplast',
+    nickname: '// the solar panel',
+    colorVar: '--org-chloro',
+    colorPaleVar: '--org-chloro-pale',
+    description: 'The site of photosynthesis, where light energy is converted into chemical energy (glucose) using CO₂ and water. Contains the green pigment chlorophyll arranged in stacked thylakoid membranes.',
+    foundIn: ['plant'],
+    animClass: 'anim-chloro',
+  },
+  {
+    id: 'nucleoid',
+    name: 'Nucleoid Region',
+    nickname: '// DNA without borders',
+    colorVar: '--org-nucleoid',
+    colorPaleVar: '--org-nucleoid-pale',
+    description: 'The region in prokaryotic cells where the single circular chromosome is concentrated. Unlike eukaryotic nuclei, it has no surrounding membrane — the DNA is directly in the cytoplasm.',
+    foundIn: ['prokaryote'],
+    animClass: 'anim-nucleoid',
+  },
+  {
+    id: 'plasmid',
+    name: 'Plasmid',
+    nickname: '// bonus DNA',
+    colorVar: '--org-plasmid',
+    colorPaleVar: '--org-plasmid-pale',
+    description: 'A small, circular DNA molecule separate from the main chromosome, found in many bacteria. Plasmids often carry genes for antibiotic resistance and can be transferred between bacterial cells.',
+    foundIn: ['prokaryote'],
+    animClass: 'anim-plasmid',
+  },
+  {
+    id: 'flagellum',
+    name: 'Flagellum',
+    nickname: '// the propeller',
+    colorVar: '--org-flagellum',
+    colorPaleVar: null,
+    description: 'A long, whip-like appendage that rotates to propel the bacterium through its environment. Bacterial flagella are structurally distinct from eukaryotic flagella and are powered by a proton motor.',
+    foundIn: ['prokaryote'],
+    animClass: 'anim-flagellum',
+  },
+];
+
+// ── Task 5: SVG Renderers ──
+
+function renderAnimalCell() {
+  return `
+    <!-- Cell membrane -->
+    <g class="org-group" data-organelle-id="membrane" style="cursor:pointer">
+      <path d="M 300 60 C 420 55, 540 130, 545 250 C 550 370, 450 460, 300 455
+               C 150 450, 55 370, 60 250 C 65 130, 180 65, 300 60 Z"
+            fill="none" stroke="var(--org-membrane)" stroke-width="3"/>
+    </g>
+
+    <!-- Nucleus with nucleolus -->
+    <g class="org-group" data-organelle-id="nucleus" style="cursor:pointer">
+      <circle cx="280" cy="230" r="72" fill="var(--org-nucleus)" fill-opacity="0.18" stroke="var(--org-nucleus)" stroke-width="2"/>
+      <circle cx="280" cy="230" r="72" fill="none" stroke="var(--org-nucleus)" stroke-width="2" stroke-dasharray="6 4"/>
+      <circle cx="275" cy="225" r="22" fill="var(--org-nucleus)" fill-opacity="0.45"/>
+      <line class="dna-line" x1="255" y1="210" x2="305" y2="210" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="20 20" stroke-dashoffset="0"/>
+      <line class="dna-line" x1="255" y1="222" x2="305" y2="222" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="20 20" stroke-dashoffset="10"/>
+      <line class="dna-line" x1="255" y1="234" x2="305" y2="234" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="20 20" stroke-dashoffset="0"/>
+    </g>
+
+    <!-- Mitochondria -->
+    <g class="org-group" data-organelle-id="mito" style="cursor:pointer">
+      <ellipse cx="420" cy="180" rx="38" ry="20" fill="var(--org-mito)" fill-opacity="0.25" stroke="var(--org-mito)" stroke-width="2" transform="rotate(-30, 420, 180)"/>
+      <path d="M 400 175 Q 420 168 440 175" fill="none" stroke="var(--org-mito)" stroke-width="1.5" transform="rotate(-30, 420, 180)"/>
+      <path d="M 400 182 Q 420 175 440 182" fill="none" stroke="var(--org-mito)" stroke-width="1.5" transform="rotate(-30, 420, 180)"/>
+      <ellipse cx="160" cy="340" rx="36" ry="18" fill="var(--org-mito)" fill-opacity="0.25" stroke="var(--org-mito)" stroke-width="2" transform="rotate(20, 160, 340)"/>
+      <path d="M 142 337 Q 160 330 178 337" fill="none" stroke="var(--org-mito)" stroke-width="1.5" transform="rotate(20, 160, 340)"/>
+    </g>
+
+    <!-- Rough ER -->
+    <g class="org-group" data-organelle-id="rer" style="cursor:pointer">
+      <path id="rerPathAnimal" d="M 360 280 Q 390 300, 380 330 Q 370 360, 400 370 Q 430 380, 420 410"
+            fill="none" stroke="var(--org-rer)" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="370" cy="288" r="4" fill="var(--org-ribo)"/>
+      <circle cx="383" cy="315" r="4" fill="var(--org-ribo)"/>
+      <circle cx="388" cy="348" r="4" fill="var(--org-ribo)"/>
+      <circle cx="409" cy="375" r="4" fill="var(--org-ribo)"/>
+      <circle class="rer-dot" r="5" fill="var(--org-ribo)" opacity="0">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="0s">
+          <mpath href="#rerPathAnimal"/>
+        </animateMotion>
+      </circle>
+    </g>
+
+    <!-- Smooth ER -->
+    <g class="org-group" data-organelle-id="ser" style="cursor:pointer">
+      <path d="M 170 160 Q 200 180, 195 210 Q 188 240, 215 250"
+            fill="none" stroke="var(--org-ser)" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- Golgi apparatus -->
+    <g class="org-group" data-organelle-id="golgi" style="cursor:pointer">
+      <path d="M 310 360 Q 360 350, 370 370" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 315 375 Q 368 364, 378 384" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 318 390 Q 372 378, 382 398" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="golgi-vesicle" cx="382" cy="368" r="6" fill="var(--org-golgi)" fill-opacity="0"/>
+      <circle class="golgi-vesicle" cx="390" cy="382" r="5" fill="var(--org-golgi)" fill-opacity="0"/>
+      <circle class="golgi-vesicle" cx="385" cy="396" r="5" fill="var(--org-golgi)" fill-opacity="0"/>
+    </g>
+
+    <!-- Scattered ribosomes group -->
+    <g class="org-group" data-organelle-id="ribo" style="cursor:pointer">
+      <circle cx="200" cy="200" r="3" fill="var(--org-ribo)"/>
+      <circle cx="450" cy="300" r="3" fill="var(--org-ribo)"/>
+      <circle cx="240" cy="380" r="3" fill="var(--org-ribo)"/>
+      <circle cx="470" cy="230" r="3" fill="var(--org-ribo)"/>
+      <circle cx="130" cy="270" r="3" fill="var(--org-ribo)"/>
+      <circle cx="350" cy="140" r="3" fill="var(--org-ribo)"/>
+      <circle cx="200" cy="200" r="8" fill="transparent"/>
+      <circle cx="450" cy="300" r="8" fill="transparent"/>
+      <circle cx="240" cy="380" r="8" fill="transparent"/>
+      <circle cx="470" cy="230" r="8" fill="transparent"/>
+      <circle cx="130" cy="270" r="8" fill="transparent"/>
+      <circle cx="350" cy="140" r="8" fill="transparent"/>
+    </g>
+
+    <!-- Lysosomes -->
+    <g class="org-group" data-organelle-id="lyso" style="cursor:pointer">
+      <circle cx="460" cy="390" r="16" fill="var(--org-lyso)" fill-opacity="0.3" stroke="var(--org-lyso)" stroke-width="2"/>
+      <circle cx="490" cy="360" r="13" fill="var(--org-lyso)" fill-opacity="0.3" stroke="var(--org-lyso)" stroke-width="2"/>
+    </g>
+
+    <!-- Vacuole (small) -->
+    <g class="org-group" data-organelle-id="vacuole" style="cursor:pointer">
+      <circle cx="155" cy="195" r="24" fill="var(--org-vacuole)" fill-opacity="0.25" stroke="var(--org-vacuole)" stroke-width="2"/>
+      <circle class="vacuole-ripple" cx="155" cy="195" r="24" fill="none" stroke="var(--org-vacuole)" stroke-width="2" opacity="0"/>
+    </g>
+  `;
+}
+
+function renderPlantCell() {
+  return `
+    <!-- Cell wall (rigid rectangle) -->
+    <g class="org-group" data-organelle-id="wall" style="cursor:pointer">
+      <rect x="42" y="42" width="516" height="416" fill="none" stroke="var(--org-wall)" stroke-width="8" rx="8"/>
+    </g>
+
+    <!-- Cell membrane (inside wall) -->
+    <g class="org-group" data-organelle-id="membrane" style="cursor:pointer">
+      <rect x="60" y="60" width="480" height="380" fill="none" stroke="var(--org-membrane)" stroke-width="2.5" rx="5"/>
+    </g>
+
+    <!-- Large central vacuole (~60% interior) -->
+    <g class="org-group" data-organelle-id="vacuole" style="cursor:pointer">
+      <ellipse cx="300" cy="255" rx="185" ry="145" fill="var(--org-vacuole)" fill-opacity="0.2" stroke="var(--org-vacuole)" stroke-width="2"/>
+      <circle class="vacuole-ripple" cx="300" cy="255" r="0" fill="none" stroke="var(--org-vacuole)" stroke-width="2" opacity="0"/>
+    </g>
+
+    <!-- Nucleus -->
+    <g class="org-group" data-organelle-id="nucleus" style="cursor:pointer">
+      <circle cx="180" cy="140" r="52" fill="var(--org-nucleus)" fill-opacity="0.18" stroke="var(--org-nucleus)" stroke-width="2"/>
+      <circle cx="180" cy="140" r="52" fill="none" stroke="var(--org-nucleus)" stroke-width="2" stroke-dasharray="6 4"/>
+      <circle cx="178" cy="138" r="16" fill="var(--org-nucleus)" fill-opacity="0.45"/>
+      <line class="dna-line" x1="162" y1="128" x2="198" y2="128" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="16 16" stroke-dashoffset="0"/>
+      <line class="dna-line" x1="162" y1="138" x2="198" y2="138" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="16 16" stroke-dashoffset="8"/>
+      <line class="dna-line" x1="162" y1="148" x2="198" y2="148" stroke="var(--org-nucleus)" stroke-width="1.5" stroke-dasharray="16 16" stroke-dashoffset="0"/>
+    </g>
+
+    <!-- Mitochondria -->
+    <g class="org-group" data-organelle-id="mito" style="cursor:pointer">
+      <ellipse cx="430" cy="120" rx="32" ry="16" fill="var(--org-mito)" fill-opacity="0.25" stroke="var(--org-mito)" stroke-width="2" transform="rotate(-20, 430, 120)"/>
+      <path d="M 414 116 Q 430 110 446 116" fill="none" stroke="var(--org-mito)" stroke-width="1.5" transform="rotate(-20, 430, 120)"/>
+      <ellipse cx="450" cy="390" rx="30" ry="15" fill="var(--org-mito)" fill-opacity="0.25" stroke="var(--org-mito)" stroke-width="2" transform="rotate(15, 450, 390)"/>
+      <path d="M 436 387 Q 450 381 464 387" fill="none" stroke="var(--org-mito)" stroke-width="1.5" transform="rotate(15, 450, 390)"/>
+    </g>
+
+    <!-- Chloroplasts -->
+    <g class="org-group" data-organelle-id="chloro" style="cursor:pointer">
+      <ellipse cx="100" cy="260" rx="36" ry="20" fill="var(--org-chloro)" fill-opacity="0.3" stroke="var(--org-chloro)" stroke-width="2"/>
+      <line x1="76" y1="260" x2="124" y2="260" stroke="var(--org-chloro)" stroke-width="1.5" opacity="0.6"/>
+      <ellipse cx="490" cy="300" rx="36" ry="20" fill="var(--org-chloro)" fill-opacity="0.3" stroke="var(--org-chloro)" stroke-width="2" transform="rotate(-15, 490, 300)"/>
+      <line x1="466" y1="300" x2="514" y2="300" stroke="var(--org-chloro)" stroke-width="1.5" opacity="0.6" transform="rotate(-15, 490, 300)"/>
+    </g>
+
+    <!-- Rough ER -->
+    <g class="org-group" data-organelle-id="rer" style="cursor:pointer">
+      <path id="rerPathPlant" d="M 220 115 Q 245 130, 240 155 Q 235 180, 255 190"
+            fill="none" stroke="var(--org-rer)" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="228" cy="124" r="4" fill="var(--org-ribo)"/>
+      <circle cx="241" cy="147" r="4" fill="var(--org-ribo)"/>
+      <circle cx="249" cy="172" r="4" fill="var(--org-ribo)"/>
+      <circle cx="255" cy="190" r="4" fill="var(--org-ribo)"/>
+      <circle class="rer-dot" r="5" fill="var(--org-ribo)" opacity="0">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="0s">
+          <mpath href="#rerPathPlant"/>
+        </animateMotion>
+      </circle>
+    </g>
+
+    <!-- Smooth ER -->
+    <g class="org-group" data-organelle-id="ser" style="cursor:pointer">
+      <path d="M 390 155 Q 415 170, 410 195 Q 405 218, 425 228"
+            fill="none" stroke="var(--org-ser)" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- Golgi -->
+    <g class="org-group" data-organelle-id="golgi" style="cursor:pointer">
+      <path d="M 100 360 Q 148 350, 156 368" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 104 376 Q 155 364, 162 382" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 106 392 Q 157 380, 164 396" fill="none" stroke="var(--org-golgi)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="golgi-vesicle" cx="166" cy="366" r="6" fill="var(--org-golgi)" fill-opacity="0"/>
+      <circle class="golgi-vesicle" cx="172" cy="380" r="5" fill="var(--org-golgi)" fill-opacity="0"/>
+      <circle class="golgi-vesicle" cx="167" cy="394" r="5" fill="var(--org-golgi)" fill-opacity="0"/>
+    </g>
+
+    <!-- Scattered ribosomes -->
+    <g class="org-group" data-organelle-id="ribo" style="cursor:pointer">
+      <circle cx="340" cy="110" r="3" fill="var(--org-ribo)"/>
+      <circle cx="480" cy="190" r="3" fill="var(--org-ribo)"/>
+      <circle cx="120" cy="185" r="3" fill="var(--org-ribo)"/>
+      <circle cx="465" cy="420" r="3" fill="var(--org-ribo)"/>
+      <circle cx="340" cy="110" r="8" fill="transparent"/>
+      <circle cx="480" cy="190" r="8" fill="transparent"/>
+      <circle cx="120" cy="185" r="8" fill="transparent"/>
+      <circle cx="465" cy="420" r="8" fill="transparent"/>
+    </g>
+  `;
+}
+
+function renderProkaryoteCell() {
+  return `
+    <!-- Flagellum (single wavy path) -->
+    <g class="org-group" data-organelle-id="flagellum" style="cursor:pointer">
+      <path id="flagPath"
+            d="M 535 250 C 555 232, 548 215, 570 208 C 592 200, 585 184, 595 178"
+            fill="none" stroke="var(--org-flagellum)" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="200" stroke-dashoffset="0"/>
+    </g>
+
+    <!-- Cell wall (outer oval) -->
+    <g class="org-group" data-organelle-id="wall" style="cursor:pointer">
+      <ellipse cx="300" cy="250" rx="248" ry="178" fill="none" stroke="var(--org-wall)" stroke-width="8"/>
+    </g>
+
+    <!-- Cell membrane (inner oval) -->
+    <g class="org-group" data-organelle-id="membrane" style="cursor:pointer">
+      <ellipse cx="300" cy="250" rx="232" ry="162" fill="var(--paper)" stroke="var(--org-membrane)" stroke-width="2"/>
+    </g>
+
+    <!-- Nucleoid region (irregular filled zone) -->
+    <g class="org-group" data-organelle-id="nucleoid" style="cursor:pointer">
+      <path d="M 300 170 C 360 165, 390 200, 385 255 C 380 310, 340 345, 300 340
+               C 260 345, 220 310, 215 255 C 210 200, 240 175, 300 170 Z"
+            fill="var(--org-nucleoid)" fill-opacity="0.25" stroke="var(--org-nucleoid)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    </g>
+
+    <!-- Plasmid (small circle near edge) -->
+    <g class="org-group" data-organelle-id="plasmid" style="cursor:pointer">
+      <circle cx="430" cy="370" r="20" fill="none" stroke="var(--org-plasmid)" stroke-width="3"/>
+      <circle cx="430" cy="370" r="6" fill="var(--org-plasmid)" fill-opacity="0.4"/>
+    </g>
+
+    <!-- Scattered ribosomes -->
+    <g class="org-group" data-organelle-id="ribo" style="cursor:pointer">
+      <circle cx="200" cy="200" r="3" fill="var(--org-ribo)"/>
+      <circle cx="400" cy="170" r="3" fill="var(--org-ribo)"/>
+      <circle cx="460" cy="260" r="3" fill="var(--org-ribo)"/>
+      <circle cx="380" cy="340" r="3" fill="var(--org-ribo)"/>
+      <circle cx="165" cy="310" r="3" fill="var(--org-ribo)"/>
+      <circle cx="240" cy="390" r="3" fill="var(--org-ribo)"/>
+      <circle cx="200" cy="200" r="8" fill="transparent"/>
+      <circle cx="400" cy="170" r="8" fill="transparent"/>
+      <circle cx="460" cy="260" r="8" fill="transparent"/>
+      <circle cx="380" cy="340" r="8" fill="transparent"/>
+      <circle cx="165" cy="310" r="8" fill="transparent"/>
+      <circle cx="240" cy="390" r="8" fill="transparent"/>
+    </g>
+  `;
+}
+
+let currentCell = 'animal';
+let selectedId = null;
+let renderTimer = null;
+
+function renderCell(type) {
+  const svg = document.getElementById('cellSvg');
+  if (renderTimer) clearTimeout(renderTimer);
+  // Snap to invisible with no transition so rapid switches don't stack fades
+  svg.style.transition = 'none';
+  svg.style.opacity = '0';
+  renderTimer = setTimeout(() => {
+    if (type === 'animal') svg.innerHTML = renderAnimalCell();
+    else if (type === 'plant') svg.innerHTML = renderPlantCell();
+    else svg.innerHTML = renderProkaryoteCell();
+    currentCell = type;
+    clearSelection();
+    renderOrganelleList(type);
+    attachSvgListeners();
+    // Re-enable transition then fade in
+    svg.style.transition = '';
+    svg.style.opacity = '1';
+  }, 200);
+}
+
+// ── Task 10: Click Interaction + Info Panel ──
+
+function clearSelection() {
+  selectedId = null;
+  document.getElementById('infoPanel').innerHTML = '<p class="info-default">Click any organelle to explore it.</p>';
+  document.querySelectorAll('.org-group').forEach(g => {
+    g.classList.remove('dimmed');
+    [...g.classList].filter(c => c.startsWith('anim-')).forEach(c => g.classList.remove(c));
+  });
+  document.querySelectorAll('.organelle-list-item').forEach(li => {
+    li.classList.remove('active');
+    li.style.borderLeftColor = 'transparent';
+  });
+}
+
+function selectOrganelle(id) {
+  if (selectedId === id) { clearSelection(); return; }
+  selectedId = id;
+  const org = ORGANELLES.find(o => o.id === id);
+  if (!org) return;
+
+  document.querySelectorAll('.org-group').forEach(g => {
+    [...g.classList].filter(c => c.startsWith('anim-')).forEach(c => g.classList.remove(c));
+    if (g.dataset.organelleId === id) {
+      g.classList.remove('dimmed');
+      g.classList.add(org.animClass);
+    } else {
+      g.classList.add('dimmed');
+    }
+  });
+
+  const badgeStyle = org.colorPaleVar
+    ? `background: var(${org.colorPaleVar}); color: var(${org.colorVar}); border-color: var(${org.colorVar});`
+    : `background: var(--cream); color: var(--ink); border-color: var(--rule-mid);`;
+
+  const foundInText = org.foundIn
+    .map(t => t === 'prokaryote' ? 'Prokaryotic cell' : t.charAt(0).toUpperCase() + t.slice(1) + ' cell')
+    .join(', ');
+
+  document.getElementById('infoPanel').innerHTML = `
+    <span class="info-badge" style="${badgeStyle}">${org.name}</span>
+    <div class="info-name">${org.name}</div>
+    ${org.nickname ? `<div class="info-nickname">${org.nickname}</div>` : ''}
+    <p class="info-desc">${org.description}</p>
+    <div class="info-found">Found in: ${foundInText}</div>
+  `;
+
+  document.querySelectorAll('.organelle-list-item').forEach(li => {
+    li.classList.toggle('active', li.dataset.organelleId === id);
+    if (li.dataset.organelleId === id) {
+      li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      li.style.borderLeftColor = org.colorPaleVar ? `var(${org.colorVar})` : 'var(--ink)';
+    } else {
+      li.style.borderLeftColor = 'transparent';
+    }
+  });
+}
+
+function attachSvgListeners() {
+  document.querySelectorAll('.org-group').forEach(g => {
+    g.addEventListener('click', () => selectOrganelle(g.dataset.organelleId));
+  });
+}
+
+// ── Task 9: Organelle List Renderer ──
+
+function renderOrganelleList(type) {
+  const list = document.getElementById('organelleList');
+  const forType = ORGANELLES.filter(o => o.foundIn.includes(type));
+  list.innerHTML = forType.map(org => {
+    const dotStyle = org.colorPaleVar
+      ? `background: var(${org.colorVar});`
+      : `background: var(--muted);`;
+    return `
+      <li class="organelle-list-item" data-organelle-id="${org.id}" style="cursor:pointer">
+        <span class="org-dot" style="${dotStyle}"></span>
+        <span>${org.name}</span>
+      </li>`;
+  }).join('');
+
+  list.querySelectorAll('.organelle-list-item').forEach(item => {
+    item.addEventListener('click', () => {
+      selectOrganelle(item.dataset.organelleId);
+    });
+  });
+}
+
+renderCell('animal');
+
+document.querySelectorAll('.cell-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cell-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderCell(btn.dataset.cell);
+  });
+});
+</script>
+</body>
+</html>
